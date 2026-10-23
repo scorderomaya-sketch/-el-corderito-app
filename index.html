@@ -65,9 +65,15 @@ button.primary{background:var(--wine);border-color:var(--wine)}
 footer{padding-bottom:85px}
 @media(min-width:600px){main{padding:24px 26px 125px}.catalogue{grid-template-columns:repeat(3,minmax(0,1fr))}.metric{padding:18px}}
 @media(max-width:365px){.dashboard-metrics{gap:6px}.metric{padding:10px 7px}.nav button{font-size:9px}.catalogue{gap:7px}.product-card{padding:10px}}
+
+.staff-card{border:1px solid #eee2dc;background:#fffdfb;border-radius:14px;padding:13px;margin:10px 0}
+.staff-card small{display:block;color:#81777c;font-size:11px;margin-top:5px;overflow-wrap:anywhere}
+.staff-card input{width:100%}
+.staff-card .row{flex-wrap:wrap}
+.dashboard-link{display:block;text-decoration:none;text-align:center;padding:12px;background:#fbeaec;color:#92233c;border:1px solid #eed4db;border-radius:12px;margin:13px 0;font-weight:750;font-size:12px}
 </style></head><body>
 <header><div class="brand"><span class="logo">🐑</span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.8 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.9 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
@@ -245,16 +251,76 @@ function inventory(){
 }
 function prices(){return '<div class="panel"><h1>Editar precios</h1><p>Solo administración. Cada cambio queda registrado y no modifica ventas antiguas.</p>'+S.products.map(p=>'<div class="item"><b>'+esc(p.name)+'</b><div class="row"><input id="price-'+p.id+'" type="number" step=".01" min="0.01" value="'+Number(p.price)+'" style="max-width:130px"><label style="margin:0"><input id="active-'+p.id+'" style="width:auto" type="checkbox" '+(p.active?'checked':'')+'> Activo</label><button data-action="price" data-id="'+p.id+'">Guardar</button></div></div>').join('')+'</div><div class="panel"><h2>Historial de precios</h2>'+S.priceHistory.map(h=>'<div class="item"><b>'+esc(S.products.find(p=>p.id===h.product_id)?.name||'Producto')+'</b><small>'+money(h.old_price)+' → '+money(h.new_price)+' · '+esc(new Date(h.changed_at).toLocaleString('es-MX'))+'</small></div>').join('')+'</div>'}
 
+
 function teamView(){
- return '<div class="panel"><div class="section-head"><div><span class="eyebrow">ADMINISTRACIÓN</span><h1>Empleados</h1></div><span class="mini-tag good">'+S.team.filter(x=>x.active).length+' activos</span></div>'+
- '<p>Consulta las cuentas autorizadas de El Corderito. La invitación de empleados desde la aplicación se incorporará en una etapa posterior.</p></div>'+
- '<div class="panel"><h2>Cuentas de acceso</h2>'+
- (S.team.length?S.team.map(t=>'<div class="activity-line"><div class="activity-glyph">'+ico('team')+'</div>'+
- '<div class="activity-main"><b>'+esc(t.display_name)+'</b><small>'+ (t.role==='admin'?'Administrador':'Empleado')+
- ' · '+(t.active?'Activo':'Pendiente')+'</small></div>'+
- '<span class="mini-tag '+(t.active?'good':'')+'">'+(t.active?'Autorizado':'Sin acceso')+'</span></div>').join(''):'<div class="empty">No hay cuentas registradas.</div>')+
- '</div><div class="caution">Todavía no se permite registrar o modificar empleados desde esta versión. Esa función incluirá invitaciones verificadas y permisos individuales.</div>';
+ const employees=S.team.filter(t=>t.role==='employee');
+ return '<div class="panel"><div class="section-head"><div><span class="eyebrow">EL CORDERITO · PERSONAL</span><h1>Empleados</h1></div>'+
+ '<span class="mini-tag good">'+employees.filter(t=>t.active).length+' activos</span></div>'+
+ '<p>Autoriza trabajadores sin compartir tu contraseña de administrador. Las cuentas nuevas comienzan sin acceso hasta verificarse y activarse.</p>'+
+ '<a class="dashboard-link" target="_blank" rel="noopener noreferrer" href="https://supabase.com/dashboard/project/xqdzpdbdvevqspshgxzk/auth/users">Invitar una cuenta nueva desde Supabase ↗</a>'+
+ '<p class="fine">En Authentication → Users usa «Invite user». Cuando acepten el correo, pulsa Actualizar aquí y activa su cuenta.</p>'+
+ '<button data-action="sync">Actualizar lista de empleados</button></div>'+
+ '<div class="panel"><div class="section-head"><h2>Personal registrado</h2><span class="mini-tag">'+employees.length+' cuentas</span></div>'+
+ (S.team.length?S.team.map(t=>{
+  const locked=t.role!=='employee',verified=!!t.email_confirmed;
+  return '<div class="staff-card"><div class="row"><b>'+esc(t.display_name)+'</b>'+
+  '<span class="mini-tag '+(t.active?'good':'')+'">'+(locked?'Administrador':t.active?'Autorizado':'Pendiente')+'</span></div>'+
+  '<small>'+esc(t.email||'Correo no disponible')+'</small>'+
+  '<small>Correo: '+(verified?'verificado':'sin verificar')+' · Rol: '+(locked?'Administrador':'Empleado')+'</small>'+
+  (!locked?'<label>Nombre visible</label><input id="team-name-'+t.user_id+'" maxlength="80" value="'+esc(t.display_name)+'">'+
+   '<div class="row" style="margin-top:10px"><button data-action="team-save" data-id="'+t.user_id+'">Guardar nombre</button>'+
+   '<button data-action="team-toggle" data-id="'+t.user_id+'" data-enable="'+(!t.active)+'" '+
+   (!t.active&&!verified?'disabled title="Falta verificar el correo"':'')+
+   '>'+ (t.active?'Desactivar':'Activar acceso') +'</button></div>':'<p class="fine">Cuenta principal protegida.</p>')+
+  '</div>';
+ }).join(''):'<div class="empty">Todavía no hay usuarios registrados.</div>')+'</div>'+
+ '<div class="caution">Para mayor seguridad, desactivar una cuenta no borra sus ventas. No se puede desactivar a alguien con un turno de caja abierto.</div>';
 }
+function shiftLabel(shift){return S.team.find(t=>t.user_id===shift.staff_id)?.display_name||(shift.staff_id===S.staff.user_id?S.staff.display_name:'Empleado');}
+function cashView(){
+ const open=S.openShift,summary=S.shiftSummary;
+ const history=S.shifts.slice(0,40);
+ let dashboard='<div class="panel"><span class="eyebrow">EL CORDERITO · CAJA</span><h1>Corte de caja</h1>'+
+ '<p>Los turnos separan las ventas por empleado. Solo el efectivo forma parte del arqueo: los pagos por tarjeta y transferencia se muestran aparte.</p></div>';
+ if(!open){
+ dashboard+='<div class="panel"><div class="section-head"><h2>Abrir mi turno</h2><span class="mini-tag">Sin turno activo</span></div>'+
+ '<label>Dinero inicial para cambio (MXN)</label><input id="shift-opening" inputmode="decimal" type="number" step=".01" min="0" value="0">'+
+ '<p class="fine">Indica el dinero que ya tienes en la caja antes de empezar a vender.</p>'+
+ '<button class="primary checkout-btn" data-action="shift-open">Abrir turno de caja</button></div>';
+ } else {
+ dashboard+='<div class="hero"><span class="eyebrow">TURNO EN CURSO</span><p style="margin-top:12px">Efectivo esperado en caja</p>'+
+ '<h1>'+(summary?money(summary.expected_cash):'—')+'</h1>'+
+ '<p>Turno iniciado el '+esc(localTime(open.opened_at))+'</p></div>'+
+ '<div class="dashboard-metrics"><div class="metric"><span class="metric-icon">'+ico('receipt')+'</span><b>'+(summary?Number(summary.orders):'—')+'</b><small>Pedidos en el turno</small></div>'+
+ '<div class="metric"><span class="metric-icon green">'+ico('cash')+'</span><b>'+(summary?money(summary.cash_sales):'—')+'</b><small>Ventas en efectivo</small></div>'+
+ '<div class="metric"><span class="metric-icon warn">'+ico('cart')+'</span><b>'+(summary?money(summary.noncash_sales):'—')+'</b><small>Tarjeta + transferencias</small></div></div>'+
+ '<div class="panel"><h2>Desglose del turno</h2>'+
+ cashRow('Fondo inicial',open.opening_cash)+cashRow('Ventas en efectivo',summary?.cash_sales)+
+ cashRow('Entradas de efectivo',summary?.cash_in)+cashRow('Salidas de efectivo',summary?.cash_out)+
+ '<div class="row" style="margin-top:10px"><b>Efectivo esperado</b><strong>'+money(summary?.expected_cash||0)+'</strong></div></div>'+
+ '<div class="panel"><h2>Entradas y retiros de dinero</h2><p>Registra dinero adicional para cambio o retiros realizados durante el turno.</p>'+
+ '<label>Tipo de movimiento</label><select id="cash-kind"><option value="in">Entrada de efectivo</option><option value="out">Retiro de efectivo</option></select>'+
+ '<label>Importe (MXN)</label><input id="cash-amount" type="number" step=".01" min=".01" inputmode="decimal" placeholder="0.00">'+
+ '<label>Motivo</label><input id="cash-reason" maxlength="250" placeholder="Ej. Más cambio o retiro autorizado">'+
+ '<p></p><button data-action="cash-move">Registrar movimiento</button>'+
+ (S.cashMovements.filter(x=>x.shift_id===open.id).slice(0,8).map(x=>'<div class="activity-line"><div class="activity-main"><b>'+
+ (x.kind==='in'?'Entrada':'Salida')+'</b><small>'+esc(x.reason)+' · '+esc(localTime(x.created_at))+'</small></div>'+
+ '<strong>'+(x.kind==='out'?'−':'+')+money(x.amount)+'</strong></div>').join(''))+'</div>'+
+ '<div class="panel"><h2>Cerrar y cuadrar caja</h2><p>Cuenta físicamente todo el efectivo del cajón. El sistema calculará si sobra o falta dinero.</p>'+
+ '<label>Efectivo contado (MXN)</label><input id="shift-counted" type="number" min="0" step=".01" inputmode="decimal" placeholder="Ej. 1320.50">'+
+ '<label>Observaciones del cierre</label><textarea id="shift-notes" rows="2" maxlength="1000" placeholder="Ej. Faltaron monedas para cambio"></textarea>'+
+ '<p></p><button class="primary checkout-btn" data-action="shift-close">Confirmar corte y cerrar turno</button></div>';
+ }
+ dashboard+='<div class="panel"><div class="section-head"><h2>Historial de turnos</h2><span class="mini-tag">'+history.length+' recientes</span></div>'+
+ (history.length?history.map(x=>'<div class="activity-line"><div class="activity-glyph">'+ico('cash')+'</div>'+
+ '<div class="activity-main"><b>'+esc(shiftLabel(x))+'</b><small>'+esc(localTime(x.opened_at))+' · '+(x.closed_at?'Cerrado':'Abierto')+'</small>'+
+ (x.closed_at?'<small>Esperado '+money(x.expected_cash)+' · contado '+money(x.counted_cash)+'</small>':'')+'</div>'+
+ '<div><span class="mini-tag '+(x.closed_at&&Number(x.difference)===0?'good':'')+'">'+
+ (x.closed_at?'Dif. '+money(x.difference):'En curso')+'</span></div></div>').join(''):'<div class="empty">Aún no hay turnos registrados.</div>')+
+ '</div><div class="caution">Modo beta: utiliza operaciones de prueba. No confundas los ingresos por transferencia con el efectivo que debe haber en caja.</div>';
+ return dashboard;
+}
+function cashRow(name,value){return '<div class="row item"><span>'+name+'</span><b>'+money(value||0)+'</b></div>';}
 
 function accountView(){return '<div class="panel"><h1>Mi cuenta</h1><p>Iniciaste sesión como <b>'+esc(S.userEmail||'Cuenta autorizada')+'</b>.</p><h2>'+ (S.recovery?'Restablecer contraseña':'Crear o cambiar contraseña') +'</h2><p>Elige una contraseña exclusiva para El Corderito. Podrás volver a iniciar sesión con tu correo y esta contraseña.</p><label>Nueva contraseña</label><input id="newpass" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Mínimo 12 caracteres"><label>Confirma la nueva contraseña</label><input id="newpass2" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Repite tu contraseña"><p></p><button class="primary" data-action="save-password">Guardar contraseña</button><p class="fine">No compartas tu contraseña. También puedes seguir usando el enlace por correo.</p></div>'}
 
@@ -402,7 +468,7 @@ document.addEventListener('change',e=>{
  if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
 });
 
-function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row"><button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='precios'?prices():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
+function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row"><button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
 async function checkout(){let job=S.pending;if(!job){const items=Object.entries(S.cart).filter(([id,qty])=>qty>0).map(([product_id,qty])=>({product_id,qty}));if(!items.length)throw Error('Primero agrega productos');job={request:crypto.randomUUID(),items,payment:S.payment,user:S.staff.user_id};S.pending=job;sessionStorage.setItem('corderito_pending',JSON.stringify(job))}if(job.user!==S.staff.user_id)throw Error('Cobro pendiente de otra cuenta');const result=await api('/rest/v1/rpc/pos_checkout',{method:'POST',body:JSON.stringify({p_request:job.request,p_items:job.items,p_payment:job.payment})});S.pending=null;sessionStorage.removeItem('corderito_pending');S.cart={};await sync();note('Venta confirmada: '+money(result.total)+(result.duplicated?' (reintento seguro)':''));}
 async function click(e){const btn=e.target.closest('[data-action]');if(!btn)return;const action=btn.dataset.action;e.preventDefault();if(S.busy)return;S.error='';S.message='';const email=String($('email')?.value||'').trim(),password=$('password')?.value||'';try{S.busy=true;
  if(action==='login'){if(!email||!password)throw Error('Escribe correo y contraseña');const auth=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});storeSession(auth);await setUser()}
@@ -417,6 +483,45 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
  else if(action==='plus'||action==='minus'){const id=btn.dataset.id;S.cart[id]=Math.max(0,Number(S.cart[id]||0)+(action==='plus'?1:-1));}
  else if(action==='sync'){await sync();S.message='Datos sincronizados'}
  else if(action==='checkout'){if(!S.openShift)throw Error('Primero abre tu turno en Caja antes de registrar ventas');S.payment=$('payment')?.value||S.payment;await checkout();return}
+
+ else if(action==='team-save'||action==='team-toggle'){
+   if(S.staff?.role!=='admin')throw Error('Solo el administrador puede gestionar empleados');
+   const id=btn.dataset.id,user=S.team.find(x=>x.user_id===id);
+   if(!user||user.role!=='employee')throw Error('No puedes modificar esta cuenta');
+   const name=$('team-name-'+id)?.value.trim()||'';
+   if(name.length<2||name.length>80)throw Error('Introduce un nombre de 2 a 80 caracteres');
+   const newActive=action==='team-toggle'?btn.dataset.enable==='true':user.active;
+   if(newActive&&!user.email_confirmed)throw Error('El empleado debe verificar su correo');
+   if(action==='team-toggle'&&!confirm(newActive?'¿Autorizar a este empleado a entrar?':'¿Desactivar a este empleado?'))return;
+   await api('/rest/v1/rpc/admin_set_employee',{method:'POST',body:JSON.stringify({p_user:id,p_display:name,p_active:newActive})});
+   await sync();S.message='Datos y permisos del empleado actualizados';
+ }
+ else if(action==='shift-open'){
+   const cash=Number($('shift-opening')?.value);
+   if(!Number.isFinite(cash)||cash<0||cash>1000000||Math.round(cash*100)!==cash*100)throw Error('El fondo inicial debe tener máximo dos decimales');
+   await api('/rest/v1/rpc/open_cash_shift',{method:'POST',body:JSON.stringify({p_opening:cash})});
+   await sync();S.page='caja';S.message='Turno abierto correctamente';
+ }
+ else if(action==='cash-move'){
+   if(!S.openShift)throw Error('No tienes un turno abierto');
+   const kind=$('cash-kind')?.value,amount=Number($('cash-amount')?.value),reason=$('cash-reason')?.value.trim()||'';
+   if(!['in','out'].includes(kind)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||reason.length<3)
+      throw Error('Revisa el tipo, importe y motivo del movimiento');
+   if(!confirm('¿Registrar este movimiento de dinero?'))return;
+   await api('/rest/v1/rpc/record_cash_movement',{method:'POST',body:JSON.stringify({p_shift:S.openShift.id,p_kind:kind,p_amount:amount,p_reason:reason})});
+   await sync();S.message='Movimiento de efectivo registrado';
+ }
+ else if(action==='shift-close'){
+   if(!S.openShift)throw Error('No tienes un turno abierto');
+   const counted=Number($('shift-counted')?.value),notes=$('shift-notes')?.value||'';
+   if($('shift-counted')?.value===''||!Number.isFinite(counted)||counted<0||counted>1000000||Math.round(counted*100)!==counted*100)
+      throw Error('Indica el efectivo que contaste, con máximo dos decimales');
+   const expected=Number(S.shiftSummary?.expected_cash||0);
+   if(!confirm('El efectivo esperado es '+money(expected)+' y contaste '+money(counted)+'. ¿Cerrar el turno?'))return;
+   const result=await api('/rest/v1/rpc/close_cash_shift',{method:'POST',body:JSON.stringify({p_shift:S.openShift.id,p_counted:counted,p_notes:notes})});
+   await sync();S.message='Turno cerrado. Diferencia de caja: '+money(result.difference);
+ }
+
  
  else if(['ingredient-new','ingredient-edit','ingredient-cancel','ingredient-save',
           'recipe-new','recipe-edit','recipe-add-line','recipe-remove-line','recipe-cancel','recipe-save',
