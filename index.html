@@ -78,7 +78,7 @@ footer{padding-bottom:85px}
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,lastSyncAt:null,page:'inicio',userEmail:'',recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -302,7 +302,7 @@ function cashView(){
  '<label>Tipo de movimiento</label><select id="cash-kind"><option value="in">Entrada de efectivo</option><option value="out">Retiro de efectivo</option></select>'+
  '<label>Importe (MXN)</label><input id="cash-amount" type="number" step=".01" min=".01" inputmode="decimal" placeholder="0.00">'+
  '<label>Motivo</label><input id="cash-reason" maxlength="250" placeholder="Ej. Más cambio o retiro autorizado">'+
- '<p></p><button data-action="cash-move">Registrar movimiento</button>'+
+ '<p></p>'+(S.pendingCashMovement?'<div class="caution">Hay un movimiento pendiente de confirmación. Reinténtalo para comprobarlo sin duplicarlo.</div><button data-action="cash-retry">Verificar movimiento pendiente</button>':'<button data-action="cash-move">Registrar movimiento</button>')+
  (S.cashMovements.filter(x=>x.shift_id===open.id).slice(0,8).map(x=>'<div class="activity-line"><div class="activity-main"><b>'+
  (x.kind==='in'?'Entrada':'Salida')+'</b><small>'+esc(x.reason)+' · '+esc(localTime(x.created_at))+'</small></div>'+
  '<strong>'+(x.kind==='out'?'−':'+')+money(x.amount)+'</strong></div>').join(''))+'</div>'+
@@ -476,7 +476,7 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
  else if(action==='verify'){const token=$('otp')?.value||'';if(!email||!token)throw Error('Escribe el correo y el código');const auth=await api('/auth/v1/verify',{method:'POST',body:JSON.stringify({email,token,type:'email'})});storeSession(auth);await setUser()}
  else if(action==='save-password'){const pw=$('newpass')?.value||'',confirm=$('newpass2')?.value||'';if(pw.length<12||pw.length>128)throw Error('Usa una contraseña de 12 a 128 caracteres');if(pw!==confirm)throw Error('Las contraseñas no coinciden');if(!S.session?.access_token)throw Error('Vuelve a iniciar sesión antes de guardar la contraseña');await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})});S.recovery=false;S.message='Contraseña guardada correctamente. En el siguiente inicio podrás usar tu correo y contraseña.';}
  else if(action==='recover'){if(!email)throw Error('Escribe primero tu correo electrónico');await api('/auth/v1/recover?redirect_to='+enc(location.origin+location.pathname),{method:'POST',body:JSON.stringify({email})});S.message='Si el correo tiene una cuenta, recibirás un enlace para restablecer la contraseña.';return}
- else if(action==='logout'){storeSession(null);S.staff=null;S.cart={};S.pending=null;S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;S.lastSyncAt=null;sessionStorage.removeItem('corderito_pending');light(false)}
+ else if(action==='logout'){storeSession(null);S.staff=null;S.cart={};S.pending=null;S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;S.pendingCashMovement=null;S.lastSyncAt=null;sessionStorage.removeItem('corderito_pending');light(false)}
  else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page}
  else if(action==='category'){S.selectedCategory=btn.dataset.category}
  else if(action==='server'){S.message='Estado del servidor: '+(S.online?'conexión disponible':'sin sincronización verificada')+'. Última sincronización completa: '+(S.lastSyncAt?new Date(S.lastSyncAt).toLocaleString('es-MX',{timeZone:'America/Merida'}):'pendiente');}
@@ -502,17 +502,31 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
    await api('/rest/v1/rpc/open_cash_shift',{method:'POST',body:JSON.stringify({p_opening:cash})});
    await sync();S.page='caja';S.message='Turno abierto correctamente';
  }
- else if(action==='cash-move'){
+ 
+else if(action==='cash-move'||action==='cash-retry'){
    if(!S.openShift)throw Error('No tienes un turno abierto');
-   const kind=$('cash-kind')?.value,amount=Number($('cash-amount')?.value),reason=$('cash-reason')?.value.trim()||'';
-   if(!['in','out'].includes(kind)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||reason.length<3)
-      throw Error('Revisa el tipo, importe y motivo del movimiento');
-   if(!confirm('¿Registrar este movimiento de dinero?'))return;
-   await api('/rest/v1/rpc/record_cash_movement',{method:'POST',body:JSON.stringify({p_shift:S.openShift.id,p_kind:kind,p_amount:amount,p_reason:reason})});
-   await sync();S.message='Movimiento de efectivo registrado';
+   if(!S.pendingCashMovement){
+     if(action==='cash-retry')throw Error('No hay movimiento pendiente');
+     const kind=$('cash-kind')?.value,amount=Number($('cash-amount')?.value),reason=$('cash-reason')?.value.trim()||'';
+     if(!['in','out'].includes(kind)||!Number.isFinite(amount)||amount<=0||amount>1000000||
+        Math.round(amount*100)!==amount*100||reason.length<3||reason.length>250)
+        throw Error('Revisa el tipo, importe y motivo del movimiento');
+     if(!confirm('¿Registrar este movimiento de dinero por '+money(amount)+'?'))return;
+     S.pendingCashMovement={request:crypto.randomUUID(),shift:S.openShift.id,kind,amount,reason,user:S.staff.user_id};
+     sessionStorage.setItem('corderito_cash_move_pending',JSON.stringify(S.pendingCashMovement));
+   }
+   const job=S.pendingCashMovement;
+   if(job.user!==S.staff.user_id||job.shift!==S.openShift.id)throw Error('Movimiento pendiente asociado a otro turno o cuenta');
+   const r=await api('/rest/v1/rpc/record_cash_movement_safe',{method:'POST',body:JSON.stringify({
+      p_request:job.request,p_shift:job.shift,p_kind:job.kind,p_amount:job.amount,p_reason:job.reason
+   })});
+   S.pendingCashMovement=null;sessionStorage.removeItem('corderito_cash_move_pending');
+   await sync();S.message='Movimiento confirmado. '+(r.duplicate?'No se duplicó tras reintentar.':'Efectivo actualizado.');
  }
+
  else if(action==='shift-close'){
    if(!S.openShift)throw Error('No tienes un turno abierto');
+   if(S.pendingCashMovement)throw Error('Verifica primero el movimiento de efectivo pendiente');
    const counted=Number($('shift-counted')?.value),notes=$('shift-notes')?.value||'';
    if($('shift-counted')?.value===''||!Number.isFinite(counted)||counted<0||counted>1000000||Math.round(counted*100)!==counted*100)
       throw Error('Indica el efectivo que contaste, con máximo dos decimales');
@@ -611,5 +625,5 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
  else if(action==='adjust'){const ingredient=$('ingredient')?.value,delta=Number($('delta')?.value),reason=$('reason')?.value||'';if(!ingredient||!delta)throw Error('Movimiento inválido');await api('/rest/v1/rpc/admin_adjust_inventory',{method:'POST',body:JSON.stringify({p_ingredient:ingredient,p_delta:delta,p_reason:reason})});await sync();S.message='Inventario actualizado'}
  }catch(err){S.error=err.message||String(err)}finally{S.busy=false;render()}}
 document.addEventListener('click',click);
-(async()=>{const fragment=new URLSearchParams(location.hash.slice(1));S.recovery=fragment.get('type')==='recovery';if(fragment.get('access_token')){storeSession({access_token:fragment.get('access_token'),refresh_token:fragment.get('refresh_token')});history.replaceState(null,'',location.pathname);}loadSession();try{S.pending=JSON.parse(sessionStorage.getItem('corderito_pending'))}catch(e){}try{S.batchPending=JSON.parse(sessionStorage.getItem('corderito_batch_pending'))}catch(e){}if(S.session){try{await setUser();if(S.recovery){S.page='cuenta';S.message='Establece una contraseña nueva para recuperar el acceso a tu cuenta.'}}catch(err){S.error=err.message;storeSession(null);S.staff=null}}render();setInterval(async()=>{if(S.staff&&!S.busy){try{await sync();if(!S.recipeDraft && S.consumptionDraft===null && S.editIngredient===null && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))render()}catch(e){S.error='Problema de sincronización: '+e.message;render()}}},12000)})();
+(async()=>{const fragment=new URLSearchParams(location.hash.slice(1));S.recovery=fragment.get('type')==='recovery';if(fragment.get('access_token')){storeSession({access_token:fragment.get('access_token'),refresh_token:fragment.get('refresh_token')});history.replaceState(null,'',location.pathname);}loadSession();try{S.pending=JSON.parse(sessionStorage.getItem('corderito_pending'))}catch(e){}try{S.batchPending=JSON.parse(sessionStorage.getItem('corderito_batch_pending'))}catch(e){}try{S.pendingCashMovement=JSON.parse(sessionStorage.getItem('corderito_cash_move_pending'))}catch(e){}if(S.session){try{await setUser();if(S.recovery){S.page='cuenta';S.message='Establece una contraseña nueva para recuperar el acceso a tu cuenta.'}}catch(err){S.error=err.message;storeSession(null);S.staff=null}}render();setInterval(async()=>{if(S.staff&&!S.busy){try{await sync();if(!S.recipeDraft && S.consumptionDraft===null && S.editIngredient===null && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))render()}catch(e){S.error='Problema de sincronización: '+e.message;render()}}},12000)})();
 </script></body></html>
