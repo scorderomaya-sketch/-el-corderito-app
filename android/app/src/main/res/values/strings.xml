@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">El Corderito</string>
+  <string name="offline_title">No pudimos conectar</string>
+  <string name="offline_message">Comprueba tu conexión a Internet y vuelve a intentarlo. Las ventas e inventarios requieren Supabase.</string>
+  <string name="retry">Reintentar conexión</string>
+</resources>
