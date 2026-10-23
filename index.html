@@ -1,13 +1,20 @@
 <!doctype html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>El Corderito · Acceso beta</title><style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f8f6f1;color:#202321}*{box-sizing:border-box}body{margin:0}header{background:#fffdf9;padding:20px 16px;border-bottom:1px solid #e7e0d8;display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{display:flex;gap:10px;align-items:center}.logo{font-size:36px}.name{color:#a91023;font:bold 27px Georgia,serif}.sub{font-size:9px;letter-spacing:2.1px}.dot{display:inline-block;height:12px;width:12px;border-radius:50%;background:#df4444;box-shadow:0 0 0 4px #f9e9e9}.dot.ok{background:#23b56c;box-shadow:0 0 0 4px #e1f7e9}main{max-width:760px;margin:0 auto;padding:17px 14px 84px}.panel{background:white;border:1px solid #eee5dc;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 4px 18px #402e1c08}h1{font-size:23px;margin:0 0 7px}h2{font-size:17px;margin:0 0 14px}p{margin:6px 0 13px;color:#6a6865;line-height:1.45;font-size:13px}.fine{font-size:12px;color:#7a7975}.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{background:#f9f9f6;border:1px solid #efede8;border-radius:14px;padding:14px}.stat b{font-size:23px}.stat small{font-size:11px;color:#666;display:block;margin-top:5px}button{font:inherit;cursor:pointer;border-radius:11px;border:1px solid #d4c9c0;padding:10px 13px;background:white;color:#4c3b31}button.primary{color:white;background:#ad1225;border-color:#ad1225;font-weight:700}button:disabled{opacity:.45;cursor:wait}input,select{width:100%;padding:12px;border:1px solid #d7d0c8;border-radius:9px;font:inherit;background:white;color:#242524}label{font-size:12px;font-weight:650;display:block;margin:12px 0 5px}.error{background:#fff0f1;border:1px solid #ffcacb;border-radius:12px;padding:12px;color:#a51d28;white-space:pre-wrap;font-size:13px}.okmsg{background:#eaf8ee;border:1px solid #c8ebd0;border-radius:12px;padding:12px;color:#126936;font-size:13px}.nav{position:sticky;bottom:0;background:#fff;display:flex;justify-content:space-around;gap:4px;padding:10px;border-top:1px solid #e6e1db}.nav button{font-size:12px;flex:1;padding:9px 2px;border:0}.nav button.chosen{background:#b31225;color:#fff}.item{padding:12px 0;border-bottom:1px solid #eee}.item:last-child{border-bottom:0}.item b{font-size:14px}.item small{display:block;color:#7b7b7b;margin-top:4px}.qty{display:flex;align-items:center;gap:8px}.qty button{width:35px;padding:8px 0;background:#fbf0f1;color:#b31225;border:0}.pill{font-size:11px;padding:5px 8px;border-radius:20px;background:#e5f7eb;color:#128145}.warn{background:#fff2d5;color:#936300}.total{font-size:25px;color:#16774a;font-weight:800}.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px}.tabs button{white-space:nowrap}.tabs .selected{background:#aa1224;color:white}.hidden{display:none}footer{padding:12px;text-align:center;font-size:11px;color:#9b9a95}@media(min-width:600px){.grid{grid-template-columns:repeat(4,1fr)}}
+
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.recipe-line{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) 38px;gap:6px;align-items:center;margin:8px 0}
+.recipe-line select,.recipe-line input{min-width:0;width:100%}
+.recipe-line button{padding:10px 0}
+textarea{width:100%;border:1px solid #d7d0c8;border-radius:9px;padding:11px;font:inherit;resize:vertical;background:white;color:#242524}
+@media(max-width:360px){.recipe-line{grid-template-columns:minmax(0,1.2fr) minmax(0,.7fr) 32px}.recipe-line select,.recipe-line input{font-size:12px}}
 </style></head><body>
 <header><div class="brand"><span class="logo">🐑</span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><span id="light" class="dot" title="Estado de conexión"></span></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.5 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.6 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],cart:{},payment:'cash',page:'inicio',userEmail:'',recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,cart:{},payment:'cash',page:'inicio',userEmail:'',recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -25,16 +32,111 @@ async function api(path,init={},retry=true){
 }
 async function refreshToken(){const r=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:S.session.refresh_token})},false);storeSession(r)}
 async function setUser(){if(!S.session?.access_token)return;const u=await api('/auth/v1/user');const rows=await api('/rest/v1/staff?select=user_id,role,display_name,active&user_id=eq.'+enc(u.id)+'&active=eq.true');if(!Array.isArray(rows)||!rows.length)throw Error('Cuenta sin permiso para entrar a El Corderito.');S.staff=rows[0];S.userEmail=u.email||'';S.page=S.staff.role==='admin'?'inicio':'ventas';await sync();}
-async function sync(){if(!S.staff)return;const promises=[api('/rest/v1/products?select=id,name,category,price,active&order=name.asc'),api('/rest/v1/ingredients?select=id,name,unit,stock,min_stock&order=name.asc'),api('/rest/v1/sales?select=id,total,created_at,payment_method,staff_id&order=created_at.desc&limit=100')];if(S.staff.role==='admin')promises.push(api('/rest/v1/price_history?select=id,product_id,old_price,new_price,changed_at&order=changed_at.desc&limit=30'));const r=await Promise.all(promises);[S.products,S.ingredients,S.sales]=r;S.priceHistory=r[3]||[];}
+async function sync(){if(!S.staff)return;const promises=[api('/rest/v1/products?select=id,name,category,price,active&order=name.asc'),api('/rest/v1/ingredients?select=id,name,unit,stock,min_stock&order=name.asc'),api('/rest/v1/sales?select=id,total,created_at,payment_method,staff_id&order=created_at.desc&limit=100')];if(S.staff.role==='admin')promises.push(api('/rest/v1/price_history?select=id,product_id,old_price,new_price,changed_at&order=changed_at.desc&limit=30'),api('/rest/v1/recipes?select=id,name,category,yield_quantity,yield_unit,instructions,notes&order=name.asc'),api('/rest/v1/recipe_ingredients?select=recipe_id,ingredient_id,quantity'),api('/rest/v1/product_ingredients?select=product_id,ingredient_id,quantity'));const r=await Promise.all(promises);[S.products,S.ingredients,S.sales]=r;S.priceHistory=r[3]||[];S.recipes=r[4]||[];S.recipeParts=r[5]||[];S.productParts=r[6]||[];}
 function loginView(){return '<div class="panel"><h1>Iniciar sesión</h1><p>Accede con la cuenta autorizada de administrador o empleado.</p><label>Correo electrónico</label><input id="email" type="email" autocomplete="username" placeholder="correo@ejemplo.com"><label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="Contraseña"><p></p><button class="primary" data-action="login">Entrar</button><hr style="border:0;border-top:1px solid #eee;margin:20px 0"><h2>Acceso por correo</h2><p>Si todavía no has establecido una contraseña, solicita un enlace para entrar. La dirección de GitHub Pages debe estar incluida en las URL de redirección permitidas en Supabase.</p><button data-action="magic">Enviar enlace de acceso</button><p class="fine">El código solo funciona si la plantilla de correo está configurada para enviar códigos OTP.</p><label>Código de correo (si lo recibes)</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Código de 6 dígitos"><p></p><button data-action="verify">Verificar código</button><hr style="border:0;border-top:1px solid #eee;margin:20px 0"><button data-action="recover">Olvidé mi contraseña</button><p class="fine">Si ya tenías una contraseña, puedes solicitar un correo para restablecerla.</p></div>'}
-function nav(){const admin=S.staff?.role==='admin';const tabs=admin?[['inicio','Inicio'],['ventas','Ventas'],['inventario','Inventario'],['precios','Precios'],['cuenta','Cuenta']]:[['ventas','Cobrar'],['inventario','Inventario'],['cuenta','Cuenta']];$('bottom').innerHTML='<nav class="nav">'+tabs.map(t=>'<button data-action="page" data-page="'+t[0]+'" class="'+(S.page===t[0]?'chosen':'')+'">'+t[1]+'</button>').join('')+'</nav>'}
+function nav(){const admin=S.staff?.role==='admin';const tabs=admin?[['inicio','Inicio'],['ventas','Ventas'],['inventario','Inventario'],['mas','Más']]:[['ventas','Cobrar'],['inventario','Inventario'],['cuenta','Cuenta']];$('bottom').innerHTML='<nav class="nav">'+tabs.map(t=>'<button data-action="page" data-page="'+t[0]+'" class="'+(S.page===t[0]?'chosen':'')+'">'+t[1]+'</button>').join('')+'</nav>'}
 function summary(){const today=new Date().toDateString(),day=S.sales.filter(s=>new Date(s.created_at).toDateString()===today),low=S.ingredients.filter(i=>Number(i.min_stock)>0&&Number(i.stock)<=Number(i.min_stock));return '<div class="panel"><h1>Resumen de hoy</h1><p>Panel administrativo sincronizado</p><div class="grid"><div class="stat"><b>'+money(day.reduce((a,s)=>a+Number(s.total),0))+'</b><small>Ventas registradas*</small></div><div class="stat"><b>'+day.length+'</b><small>Órdenes*</small></div><div class="stat"><b>'+low.length+'</b><small>Insumos bajo mínimo</small></div><div class="stat"><b>'+money(day.filter(s=>s.payment_method==='cash').reduce((a,s)=>a+Number(s.total),0))+'</b><small>Ventas en efectivo*</small></div></div><p class="fine">*Calculado sobre las últimas 100 ventas. No equivale a un corte de caja.</p></div><div class="panel"><h2>Inventario en alerta</h2>'+(low.length?low.map(i=>'<div class="item row"><div><b>'+esc(i.name)+'</b><small>'+Number(i.stock)+' '+esc(i.unit)+' disponibles</small></div><span class="pill warn">Bajo stock</span></div>').join(''):'<p>Sin alertas de inventario.</p>')+'</div><div class="panel"><h2>Actividad reciente</h2>'+S.sales.slice(0,10).map(s=>'<div class="item row"><div><b>Venta · '+esc(new Date(s.created_at).toLocaleString('es-MX'))+'</b><small>'+esc(s.payment_method)+'</small></div><b>'+money(s.total)+'</b></div>').join('')+'</div>'}
 function total(){return S.products.reduce((a,p)=>a+Number(S.cart[p.id]||0)*Number(p.price),0)}
 function sale(){const items=S.products.filter(p=>p.active);return '<div class="panel"><h1>Nueva venta</h1><p>Precios consultados del servidor. El importe definitivo se calcula otra vez al confirmar.</p>'+items.map(p=>'<div class="item row"><div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · '+money(p.price)+'</small></div><div class="qty"><button data-action="minus" data-id="'+p.id+'">−</button><b>'+Number(S.cart[p.id]||0)+'</b><button data-action="plus" data-id="'+p.id+'">+</button></div></div>').join('')+'</div><div class="panel"><h2>Pedido actual</h2><div class="row"><b>Total estimado</b><span class="total">'+money(total())+'</span></div><label>Método de pago</label><select id="payment"><option value="cash" '+(S.payment==='cash'?'selected':'')+'>Efectivo</option><option value="transfer" '+(S.payment==='transfer'?'selected':'')+'>Transferencia</option><option value="card" '+(S.payment==='card'?'selected':'')+'>Tarjeta</option></select><p></p><button class="primary" data-action="checkout" '+(S.busy||(!total()&&!S.pending)?'disabled':'')+'>'+ (S.pending?'Verificar cobro pendiente':'Registrar venta')+'</button><p class="fine">Bloqueado si un ingrediente o receta de consumo no está configurado. Modo beta: no usar con dinero real.</p></div>'}
 function inventory(){return '<div class="panel"><h1>Inventario</h1><p>Existencias obtenidas desde la base de datos.</p>'+S.ingredients.map(i=>'<div class="item row"><div><b>'+esc(i.name)+'</b><small>'+Number(i.stock)+' '+esc(i.unit)+' · mínimo '+Number(i.min_stock)+'</small></div>'+(Number(i.stock)<=Number(i.min_stock)?'<span class="pill warn">Bajo</span>':'<span class="pill">OK</span>')+'</div>').join('')+'</div>'+(S.staff.role==='admin'?'<div class="panel"><h2>Movimiento de inventario</h2><label>Ingrediente</label><select id="ingredient">'+S.ingredients.map(i=>'<option value="'+i.id+'">'+esc(i.name)+'</option>').join('')+'</select><label>Cantidad (negativa para merma)</label><input id="delta" type="number" step="any" inputmode="decimal" placeholder="Ej. 5 o -0.5"><label>Motivo</label><input id="reason" maxlength="200" placeholder="Compra o merma registrada"><p></p><button class="primary" data-action="adjust">Guardar movimiento</button></div>':'')}
 function prices(){return '<div class="panel"><h1>Editar precios</h1><p>Solo administración. Cada cambio queda registrado y no modifica ventas antiguas.</p>'+S.products.map(p=>'<div class="item"><b>'+esc(p.name)+'</b><div class="row"><input id="price-'+p.id+'" type="number" step=".01" min="0.01" value="'+Number(p.price)+'" style="max-width:130px"><label style="margin:0"><input id="active-'+p.id+'" style="width:auto" type="checkbox" '+(p.active?'checked':'')+'> Activo</label><button data-action="price" data-id="'+p.id+'">Guardar</button></div></div>').join('')+'</div><div class="panel"><h2>Historial de precios</h2>'+S.priceHistory.map(h=>'<div class="item"><b>'+esc(S.products.find(p=>p.id===h.product_id)?.name||'Producto')+'</b><small>'+money(h.old_price)+' → '+money(h.new_price)+' · '+esc(new Date(h.changed_at).toLocaleString('es-MX'))+'</small></div>').join('')+'</div>'}
 function accountView(){return '<div class="panel"><h1>Mi cuenta</h1><p>Iniciaste sesión como <b>'+esc(S.userEmail||'Cuenta autorizada')+'</b>.</p><h2>'+ (S.recovery?'Restablecer contraseña':'Crear o cambiar contraseña') +'</h2><p>Elige una contraseña exclusiva para El Corderito. Podrás volver a iniciar sesión con tu correo y esta contraseña.</p><label>Nueva contraseña</label><input id="newpass" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Mínimo 12 caracteres"><label>Confirma la nueva contraseña</label><input id="newpass2" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Repite tu contraseña"><p></p><button class="primary" data-action="save-password">Guardar contraseña</button><p class="fine">No compartas tu contraseña. También puedes seguir usando el enlace por correo.</p></div>'}
-function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}app.innerHTML='<div class="panel row"><div><b>'+esc(S.staff.display_name)+'</b><small style="display:block">'+(S.staff.role==='admin'?'Administrador':'Empleado')+'</small></div><div class="row"><button data-action="sync">Actualizar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='precios'?prices():accountView());nav()}
+
+function adminMore(){
+ return '<div class="panel"><h1>Administración</h1><p>Configuración privada para el propietario.</p>'+
+ [['ingredientes','Ingredientes y suministros','Crear ingredientes, unidades y niveles mínimos.'],['recetas','Recetario privado','Porciones, componentes y pasos de cocina.'],['consumo','Consumo por venta','Define cuánto se descuenta al vender.'],['precios','Precios','Ajustes e historial.'],['cuenta','Cuenta','Contraseña y seguridad.']].map(t=>
+ '<div class="item row"><div><b>'+esc(t[1])+'</b><small>'+esc(t[2])+'</small></div><button data-action="page" data-page="'+t[0]+'">Abrir ›</button></div>'
+ ).join('')+'</div><div class="panel"><h2>Importante</h2><p>Las recetas de preparación documentan cómo cocinar. Solo el consumo por venta modifica inventario al cobrar. Los lotes preparados se integrarán por separado para evitar descontar dos veces.</p></div>';
+}
+function ingredientEditor(){
+ const x=S.ingredients.find(i=>i.id===S.editIngredient),edit=!!x;
+ const current=x||{name:'',unit:'g',min_stock:0};
+ return '<div class="panel"><h2>'+(edit?'Editar ingrediente':'Añadir ingrediente')+'</h2><label>Nombre</label><input id="ing-name" maxlength="100" value="'+esc(current.name)+'" placeholder="Ej. Pierna de cerdo cruda">'+
+ '<div class="form-grid"><div><label>Unidad</label><select id="ing-unit" '+(edit?'disabled':'')+'>'+
+ ['g','kg','ml','L','pz'].map(u=>'<option value="'+u+'" '+(current.unit===u?'selected':'')+'>'+u+'</option>').join('')+
+ '</select></div><div><label>Avisar si quedan</label><input id="ing-min" type="number" min="0" step="any" value="'+esc(current.min_stock)+'"></div></div>'+
+ '<p class="fine">Las unidades no se pueden cambiar después de guardar. Las existencias se modifican desde Inventario con un movimiento registrado.</p>'+
+ '<div class="row"><button data-action="ingredient-cancel">Cancelar</button><button class="primary" data-action="ingredient-save">Guardar ingrediente</button></div></div>';
+}
+function ingredientsView(){
+ return '<div class="panel"><h1>Ingredientes individuales</h1><p>Solo administración. Registra materias primas y preparaciones con unidades consistentes.</p><button class="primary" data-action="ingredient-new">+ Agregar ingrediente</button></div>'+
+ (S.editIngredient!==null?ingredientEditor():'')+
+ '<div class="panel"><h2>Lista de ingredientes ('+S.ingredients.length+')</h2>'+
+ (S.ingredients.length?S.ingredients.map(i=>'<div class="item row"><div><b>'+esc(i.name)+'</b><small>'+Number(i.stock)+' '+esc(i.unit)+' · alerta '+Number(i.min_stock)+' '+esc(i.unit)+'</small></div><button data-action="ingredient-edit" data-id="'+i.id+'">Editar</button></div>').join(''):'<p>Aún no hay ingredientes. Empieza registrando la materia prima.</p>')+'</div>';
+}
+function ingredientSelect(value,index,kind){
+ return '<select data-'+kind+'-line="'+index+'" data-part="ingredient_id"><option value="">Selecciona ingrediente</option>'+
+ S.ingredients.map(i=>'<option value="'+i.id+'" '+(i.id===value?'selected':'')+'>'+esc(i.name)+' ('+esc(i.unit)+')</option>').join('')+'</select>';
+}
+function recipeDraftView(){
+ const d=S.recipeDraft;
+ return '<div class="panel"><h2>'+(d.id?'Editar receta':'Nueva receta')+'</h2>'+
+ '<label>Nombre de la preparación</label><input data-rfield="name" maxlength="100" value="'+esc(d.name)+'" placeholder="Ej. Pierna guisada">'+
+ '<label>Categoría</label><input data-rfield="category" maxlength="60" value="'+esc(d.category)+'">'+
+ '<div class="form-grid"><div><label>Rendimiento</label><input type="number" step="any" min="0.001" data-rfield="yield_quantity" value="'+esc(d.yield_quantity)+'"></div><div><label>Unidad de rendimiento</label><input data-rfield="yield_unit" maxlength="30" value="'+esc(d.yield_unit)+'" placeholder="kg / porciones"></div></div>'+
+ '<h2>Ingredientes para preparar</h2>'+
+ (d.lines.length?d.lines.map((x,i)=>'<div class="recipe-line">'+ingredientSelect(x.ingredient_id,i,'r')+
+ '<input type="number" min="0.001" step="any" placeholder="Cantidad" data-r-line="'+i+'" data-part="quantity" value="'+esc(x.quantity)+'">'+
+ '<button data-action="recipe-remove-line" data-index="'+i+'" title="Quitar ingrediente">×</button></div>').join(''):'<p class="fine">Puedes guardar primero un borrador sin cantidades.</p>')+
+ '<button data-action="recipe-add-line">+ Añadir ingrediente</button>'+
+ '<label>Instrucciones paso a paso</label><textarea data-rfield="instructions" rows="6" placeholder="1. Preparar...">'+esc(d.instructions)+'</textarea>'+
+ '<label>Observaciones</label><textarea data-rfield="notes" rows="3" placeholder="Tiempos de cocción, cuidados, presentación...">'+esc(d.notes)+'</textarea>'+
+ '<p class="fine">Guardar esta receta no descuenta inventario. Se trata de instrucciones privadas.</p>'+
+ '<div class="row"><button data-action="recipe-cancel">Cancelar</button><button class="primary" data-action="recipe-save">Guardar receta</button></div></div>';
+}
+function recipesView(){
+ return '<div class="panel"><h1>Recetario privado</h1><p>Solo el administrador puede consultar las preparaciones y sus instrucciones.</p><button class="primary" data-action="recipe-new">+ Nueva receta</button></div>'+
+ (S.recipeDraft?recipeDraftView():'')+
+ '<div class="panel"><h2>Preparaciones ('+S.recipes.length+')</h2>'+
+ (S.recipes.length?S.recipes.map(r=>'<div class="item row"><div><b>'+esc(r.name)+'</b><small>'+Number(r.yield_quantity)+' '+esc(r.yield_unit)+' · '+(S.recipeParts.filter(x=>x.recipe_id===r.id).length)+' ingredientes</small></div><button data-action="recipe-edit" data-id="'+r.id+'">Editar</button></div>').join(''):'<p>Aún no tienes recetas guardadas. Puedes empezar por la pierna de cerdo o el puré de papa.</p>')+'</div>';
+}
+function consumptionDraftView(){
+ const d=S.consumptionDraft;
+ const p=S.products.find(x=>x.id===S.consumptionProduct);
+ return '<div class="panel"><h2>'+esc(p?.name||'Producto')+'</h2><p>Consumo de ingredientes por <b>una venta</b> del producto.</p>'+
+ (d.length?d.map((x,i)=>'<div class="recipe-line">'+ingredientSelect(x.ingredient_id,i,'c')+
+ '<input type="number" min="0.001" step="any" placeholder="Cantidad" data-c-line="'+i+'" data-part="quantity" value="'+esc(x.quantity)+'">'+
+ '<button data-action="consumption-remove-line" data-index="'+i+'">×</button></div>').join(''):'<p class="fine">No hay ingredientes asignados. Sin esta configuración la venta queda bloqueada.</p>')+
+ '<button data-action="consumption-add-line">+ Añadir ingrediente</button>'+
+ '<p class="fine">Si vendes pierna cocinada, usa el ingrediente preparado, no el crudo. Así evitaremos descuentos duplicados al registrar lotes.</p>'+
+ '<div class="row"><button data-action="consumption-cancel">Cancelar</button><button class="primary" data-action="consumption-save">Guardar consumo</button></div></div>';
+}
+function consumptionView(){
+ return '<div class="panel"><h1>Consumo por venta</h1><p>Configura qué ingredientes se descuentan automáticamente con cada producto vendido.</p></div>'+
+ (S.consumptionDraft!==null?consumptionDraftView():'')+
+ '<div class="panel"><h2>Productos ('+S.products.length+')</h2>'+
+ S.products.map(p=>'<div class="item row"><div><b>'+esc(p.name)+'</b><small>'+S.productParts.filter(x=>x.product_id===p.id).length+' ingredientes configurados</small></div><button data-action="consumption-edit" data-id="'+p.id+'">Configurar</button></div>').join('')+'</div>';
+}
+function emptyRecipe(){
+ return {id:null,name:'',category:'Preparación',yield_quantity:'1',yield_unit:'porciones',instructions:'',notes:'',lines:[]};
+}
+function getRecipeDraft(id){
+ const r=S.recipes.find(x=>x.id===id);
+ if(!r)throw Error('Receta no encontrada');
+ return {id:r.id,name:r.name,category:r.category,yield_quantity:String(r.yield_quantity),yield_unit:r.yield_unit,instructions:r.instructions,notes:r.notes,
+ lines:S.recipeParts.filter(x=>x.recipe_id===id).map(x=>({ingredient_id:x.ingredient_id,quantity:String(x.quantity)}))};
+}
+function normalizedLines(lines){
+ const v=lines.map(x=>({ingredient_id:x.ingredient_id,quantity:Number(x.quantity)}));
+ if(v.some(x=>!S.ingredients.some(i=>i.id===x.ingredient_id)||!Number.isFinite(x.quantity)||x.quantity<=0))throw Error('Elige un ingrediente y una cantidad positiva en cada línea.');
+ if(new Set(v.map(x=>x.ingredient_id)).size!==v.length)throw Error('El mismo ingrediente aparece dos veces.');
+ return v;
+}
+document.addEventListener('input',e=>{
+ const t=e.target;
+ if(S.staff?.role!=='admin')return;
+ if(S.recipeDraft&&t.dataset.rfield){S.recipeDraft[t.dataset.rfield]=t.value;}
+ if(S.recipeDraft&&t.dataset.rLine!==undefined){const line=S.recipeDraft.lines[Number(t.dataset.rLine)];if(line)line[t.dataset.part]=t.value;}
+ if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
+});
+document.addEventListener('change',e=>{
+ const t=e.target;
+ if(S.staff?.role!=='admin')return;
+ if(S.recipeDraft&&t.dataset.rLine!==undefined){const line=S.recipeDraft.lines[Number(t.dataset.rLine)];if(line)line[t.dataset.part]=t.value;}
+ if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
+});
+
+function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}app.innerHTML='<div class="panel row"><div><b>'+esc(S.staff.display_name)+'</b><small style="display:block">'+(S.staff.role==='admin'?'Administrador':'Empleado')+'</small></div><div class="row"><button data-action="sync">Actualizar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='precios'?prices():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='consumo'?consumptionView():accountView());nav()}
 async function checkout(){let job=S.pending;if(!job){const items=Object.entries(S.cart).filter(([id,qty])=>qty>0).map(([product_id,qty])=>({product_id,qty}));if(!items.length)throw Error('Primero agrega productos');job={request:crypto.randomUUID(),items,payment:S.payment,user:S.staff.user_id};S.pending=job;sessionStorage.setItem('corderito_pending',JSON.stringify(job))}if(job.user!==S.staff.user_id)throw Error('Cobro pendiente de otra cuenta');const result=await api('/rest/v1/rpc/pos_checkout',{method:'POST',body:JSON.stringify({p_request:job.request,p_items:job.items,p_payment:job.payment})});S.pending=null;sessionStorage.removeItem('corderito_pending');S.cart={};await sync();note('Venta confirmada: '+money(result.total)+(result.duplicated?' (reintento seguro)':''));}
 async function click(e){const btn=e.target.closest('[data-action]');if(!btn)return;const action=btn.dataset.action;e.preventDefault();if(S.busy)return;S.error='';S.message='';const email=String($('email')?.value||'').trim(),password=$('password')?.value||'';try{S.busy=true;
  if(action==='login'){if(!email||!password)throw Error('Escribe correo y contraseña');const auth=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});storeSession(auth);await setUser()}
@@ -47,9 +149,55 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
  else if(action==='plus'||action==='minus'){const id=btn.dataset.id;S.cart[id]=Math.max(0,Number(S.cart[id]||0)+(action==='plus'?1:-1));}
  else if(action==='sync'){await sync();S.message='Datos sincronizados'}
  else if(action==='checkout'){S.payment=$('payment')?.value||S.payment;await checkout();return}
+ 
+ else if(['ingredient-new','ingredient-edit','ingredient-cancel','ingredient-save',
+          'recipe-new','recipe-edit','recipe-add-line','recipe-remove-line','recipe-cancel','recipe-save',
+          'consumption-edit','consumption-add-line','consumption-remove-line','consumption-cancel','consumption-save'].includes(action)){
+  if(S.staff?.role!=='admin')throw Error('Esta función es exclusiva del administrador.');
+  if(action==='ingredient-new')S.editIngredient='new';
+  else if(action==='ingredient-edit')S.editIngredient=btn.dataset.id;
+  else if(action==='ingredient-cancel')S.editIngredient=null;
+  else if(action==='ingredient-save'){
+   const id=S.editIngredient==='new'?null:S.editIngredient;
+   const existing=S.ingredients.find(i=>i.id===id);
+   const name=$('ing-name').value.trim(),unit=existing?.unit||$('ing-unit').value,min=Number($('ing-min').value);
+   if(name.length<2||!Number.isFinite(min)||min<0)throw Error('Nombre o stock mínimo inválidos');
+   await api('/rest/v1/rpc/admin_upsert_ingredient',{method:'POST',body:JSON.stringify({p_id:id,p_name:name,p_unit:unit,p_min:min})});
+   S.editIngredient=null;await sync();S.message='Ingrediente guardado';
+  }
+  else if(action==='recipe-new'){S.recipeDraft=emptyRecipe();}
+  else if(action==='recipe-edit'){S.recipeDraft=getRecipeDraft(btn.dataset.id);}
+  else if(action==='recipe-add-line'){S.recipeDraft.lines.push({ingredient_id:'',quantity:''});}
+  else if(action==='recipe-remove-line'){S.recipeDraft.lines.splice(Number(btn.dataset.index),1);}
+  else if(action==='recipe-cancel'){S.recipeDraft=null;}
+  else if(action==='recipe-save'){
+   const d=S.recipeDraft,lines=normalizedLines(d.lines),yieldQty=Number(d.yield_quantity);
+   if(d.name.trim().length<2||!Number.isFinite(yieldQty)||yieldQty<=0||!d.yield_unit.trim())throw Error('Nombre o rendimiento inválidos');
+   await api('/rest/v1/rpc/admin_save_recipe',{method:'POST',body:JSON.stringify({
+    p_id:d.id,p_name:d.name.trim(),p_category:d.category.trim(),p_yield:yieldQty,p_unit:d.yield_unit.trim(),
+    p_instructions:d.instructions,p_notes:d.notes,p_lines:lines})});
+   S.recipeDraft=null;await sync();S.message='Receta guardada de forma privada';
+  }
+  else if(action==='consumption-edit'){
+   S.consumptionProduct=btn.dataset.id;
+   S.consumptionDraft=S.productParts.filter(x=>x.product_id===S.consumptionProduct)
+      .map(x=>({ingredient_id:x.ingredient_id,quantity:String(x.quantity)}));
+  }
+  else if(action==='consumption-add-line'){S.consumptionDraft.push({ingredient_id:'',quantity:''});}
+  else if(action==='consumption-remove-line'){S.consumptionDraft.splice(Number(btn.dataset.index),1);}
+  else if(action==='consumption-cancel'){S.consumptionDraft=null;S.consumptionProduct=null;}
+  else if(action==='consumption-save'){
+   const lines=normalizedLines(S.consumptionDraft);
+   if(!confirm('¿Guardar el consumo para futuras ventas? No afectará ventas anteriores.'))return;
+   await api('/rest/v1/rpc/admin_save_consumption',{method:'POST',
+    body:JSON.stringify({p_product:S.consumptionProduct,p_lines:lines})});
+   S.consumptionDraft=null;S.consumptionProduct=null;await sync();S.message='Consumo por venta guardado';
+  }
+ }
+
  else if(action==='price'){const id=btn.dataset.id,price=Number($('price-'+id).value),active=$('active-'+id).checked;if(!Number.isFinite(price)||price<=0)throw Error('Precio no válido');await api('/rest/v1/rpc/admin_update_price',{method:'POST',body:JSON.stringify({p_product:id,p_price:price,p_active:active})});await sync();S.message='Precio actualizado'}
  else if(action==='adjust'){const ingredient=$('ingredient')?.value,delta=Number($('delta')?.value),reason=$('reason')?.value||'';if(!ingredient||!delta)throw Error('Movimiento inválido');await api('/rest/v1/rpc/admin_adjust_inventory',{method:'POST',body:JSON.stringify({p_ingredient:ingredient,p_delta:delta,p_reason:reason})});await sync();S.message='Inventario actualizado'}
  }catch(err){S.error=err.message||String(err)}finally{S.busy=false;render()}}
 document.addEventListener('click',click);
-(async()=>{const fragment=new URLSearchParams(location.hash.slice(1));S.recovery=fragment.get('type')==='recovery';if(fragment.get('access_token')){storeSession({access_token:fragment.get('access_token'),refresh_token:fragment.get('refresh_token')});history.replaceState(null,'',location.pathname);}loadSession();try{S.pending=JSON.parse(sessionStorage.getItem('corderito_pending'))}catch(e){}if(S.session){try{await setUser();if(S.recovery){S.page='cuenta';S.message='Establece una contraseña nueva para recuperar el acceso a tu cuenta.'}}catch(err){S.error=err.message;storeSession(null);S.staff=null}}render();setInterval(async()=>{if(S.staff&&!S.busy){try{await sync();render()}catch(e){S.error='Problema de sincronización: '+e.message;render()}}},12000)})();
+(async()=>{const fragment=new URLSearchParams(location.hash.slice(1));S.recovery=fragment.get('type')==='recovery';if(fragment.get('access_token')){storeSession({access_token:fragment.get('access_token'),refresh_token:fragment.get('refresh_token')});history.replaceState(null,'',location.pathname);}loadSession();try{S.pending=JSON.parse(sessionStorage.getItem('corderito_pending'))}catch(e){}if(S.session){try{await setUser();if(S.recovery){S.page='cuenta';S.message='Establece una contraseña nueva para recuperar el acceso a tu cuenta.'}}catch(err){S.error=err.message;storeSession(null);S.staff=null}}render();setInterval(async()=>{if(S.staff&&!S.busy){try{await sync();if(!S.recipeDraft && S.consumptionDraft===null && S.editIngredient===null && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))render()}catch(e){S.error='Problema de sincronización: '+e.message;render()}}},12000)})();
 </script></body></html>
