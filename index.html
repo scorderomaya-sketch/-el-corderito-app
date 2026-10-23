@@ -72,7 +72,7 @@ footer{padding-bottom:85px}
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],lastSyncAt:null,page:'inicio',userEmail:'',recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,lastSyncAt:null,page:'inicio',userEmail:'',recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -90,7 +90,48 @@ async function api(path,init={},retry=true){
 }
 async function refreshToken(){const r=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:S.session.refresh_token})},false);storeSession(r)}
 async function setUser(){if(!S.session?.access_token)return;const u=await api('/auth/v1/user');const rows=await api('/rest/v1/staff?select=user_id,role,display_name,active&user_id=eq.'+enc(u.id)+'&active=eq.true');if(!Array.isArray(rows)||!rows.length)throw Error('Cuenta sin permiso para entrar a El Corderito.');S.staff=rows[0];S.userEmail=u.email||'';S.page=S.staff.role==='admin'?'inicio':'ventas';await sync();}
-async function sync(){if(!S.staff)return;const promises=[api('/rest/v1/products?select=id,name,category,price,active&order=name.asc'),api('/rest/v1/ingredients?select=id,name,unit,stock,min_stock&order=name.asc'),api('/rest/v1/sales?select=id,total,created_at,payment_method,staff_id&order=created_at.desc&limit=100')];if(S.staff.role==='admin')promises.push(api('/rest/v1/price_history?select=id,product_id,old_price,new_price,changed_at&order=changed_at.desc&limit=30'),api('/rest/v1/recipes?select=id,name,category,yield_quantity,yield_unit,instructions,notes,prepared_ingredient_id&order=name.asc'),api('/rest/v1/recipe_ingredients?select=recipe_id,ingredient_id,quantity'),api('/rest/v1/product_ingredients?select=product_id,ingredient_id,quantity'),api('/rest/v1/preparation_batches?select=id,recipe_id,recipe_name_snapshot,prepared_ingredient_id,scale_factor,planned_yield,actual_yield,notes,created_at&order=created_at.desc&limit=30'),api('/rest/v1/rpc/admin_daily_sales_summary'),api('/rest/v1/staff?select=user_id,display_name,role,active,created_at&order=created_at.desc'));const r=await Promise.all(promises);[S.products,S.ingredients,S.sales]=r;S.priceHistory=r[3]||[];S.recipes=r[4]||[];S.recipeParts=r[5]||[];S.productParts=r[6]||[];S.batches=r[7]||[];S.daily=r[8]||null;S.team=r[9]||[];S.lastSyncAt=new Date().toISOString();light(true);}
+
+async function sync(){
+ if(!S.staff)return;
+ const admin=S.staff.role==='admin';
+ const paths=[
+ '/rest/v1/products?select=id,name,category,price,active&order=name.asc',
+ '/rest/v1/ingredients?select=id,name,unit,stock,min_stock&order=name.asc',
+ '/rest/v1/sales?select=id,total,created_at,payment_method,staff_id,cash_shift_id&order=created_at.desc&limit=100'
+ ];
+ if(admin)paths.push(
+ '/rest/v1/price_history?select=id,product_id,old_price,new_price,changed_at&order=changed_at.desc&limit=30',
+ '/rest/v1/recipes?select=id,name,category,yield_quantity,yield_unit,instructions,notes,prepared_ingredient_id&order=name.asc',
+ '/rest/v1/recipe_ingredients?select=recipe_id,ingredient_id,quantity',
+ '/rest/v1/product_ingredients?select=product_id,ingredient_id,quantity',
+ '/rest/v1/preparation_batches?select=id,recipe_id,recipe_name_snapshot,prepared_ingredient_id,scale_factor,planned_yield,actual_yield,notes,created_at&order=created_at.desc&limit=30',
+ '/rest/v1/rpc/admin_daily_sales_summary');
+ paths.push(
+ '/rest/v1/cash_shifts?select=id,staff_id,opened_at,opening_cash,closed_at,closed_by,counted_cash,expected_cash,cash_sales,noncash_sales,cash_in,cash_out,difference,notes&order=opened_at.desc&limit=150',
+ '/rest/v1/cash_movements?select=id,shift_id,actor_id,kind,amount,reason,created_at&order=created_at.desc&limit=100');
+ const answers=await Promise.all(paths.map(path=>api(path)));
+ S.products=answers[0];S.ingredients=answers[1];S.sales=answers[2];
+ if(admin){
+   S.priceHistory=answers[3]||[];
+   S.recipes=answers[4]||[];
+   S.recipeParts=answers[5]||[];
+   S.productParts=answers[6]||[];
+   S.batches=answers[7]||[];
+   S.daily=answers[8]||null;
+ }
+ const idx=admin?9:3;
+ S.shifts=answers[idx]||[];
+ S.cashMovements=answers[idx+1]||[];
+ S.openShift=S.shifts.find(x=>x.staff_id===S.staff.user_id&&!x.closed_at)||null;
+ const supplement=[];
+ if(admin)supplement.push(api('/rest/v1/rpc/admin_team_list',{method:'POST',body:'{}'}));
+ if(S.openShift)supplement.push(api('/rest/v1/rpc/cash_shift_summary',{method:'POST',body:JSON.stringify({p_shift:S.openShift.id})}));
+ const extra=await Promise.all(supplement);
+ if(admin)S.team=extra[0]||[];
+ S.shiftSummary=S.openShift?(extra[admin?1:0]||null):null;
+ S.lastSyncAt=new Date().toISOString();
+ light(true);
+}
 function loginView(){return '<div class="panel"><h1>Iniciar sesión</h1><p>Accede con la cuenta autorizada de administrador o empleado.</p><label>Correo electrónico</label><input id="email" type="email" autocomplete="username" placeholder="correo@ejemplo.com"><label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="Contraseña"><p></p><button class="primary" data-action="login">Entrar</button><hr style="border:0;border-top:1px solid #eee;margin:20px 0"><h2>Acceso por correo</h2><p>Si todavía no has establecido una contraseña, solicita un enlace para entrar. La dirección de GitHub Pages debe estar incluida en las URL de redirección permitidas en Supabase.</p><button data-action="magic">Enviar enlace de acceso</button><p class="fine">El código solo funciona si la plantilla de correo está configurada para enviar códigos OTP.</p><label>Código de correo (si lo recibes)</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Código de 6 dígitos"><p></p><button data-action="verify">Verificar código</button><hr style="border:0;border-top:1px solid #eee;margin:20px 0"><button data-action="recover">Olvidé mi contraseña</button><p class="fine">Si ya tenías una contraseña, puedes solicitar un correo para restablecerla.</p></div>'}
 
 function ico(name){
@@ -111,8 +152,8 @@ function ico(name){
 function nav(){
  const admin=S.staff?.role==='admin';
  const tabs=admin?[['inicio','Inicio','home'],['ventas','Ventas','cart'],['inventario','Inventario','inventory'],['equipo','Empleados','team'],['mas','Más','more']]
- :[['ventas','Cobrar','cart'],['inventario','Inventario','inventory'],['cuenta','Cuenta','team']];
- const current=admin&&['ingredientes','recetas','lotes','consumo','precios','cuenta'].includes(S.page)?'mas':S.page;
+ :[['ventas','Cobrar','cart'],['inventario','Inventario','inventory'],['caja','Caja','cash'],['cuenta','Cuenta','team']];
+ const current=admin&&['ingredientes','recetas','lotes','consumo','precios','caja','cuenta'].includes(S.page)?'mas':S.page;
  $('bottom').innerHTML='<nav class="nav">'+tabs.map(t=>
  '<button data-action="page" data-page="'+t[0]+'" class="'+(current===t[0]?'chosen':'')+'">'+ico(t[2])+'<span>'+t[1]+'</span></button>').join('')+'</nav>';
 }
@@ -174,8 +215,9 @@ function sale(){
  '<label>Método de pago</label><select id="payment"><option value="cash" '+(S.payment==='cash'?'selected':'')+'>Efectivo</option>'+
  '<option value="transfer" '+(S.payment==='transfer'?'selected':'')+'>Transferencia</option>'+
  '<option value="card" '+(S.payment==='card'?'selected':'')+'>Tarjeta</option></select><p></p>'+
- '<button class="primary checkout-btn" data-action="checkout" '+(S.busy||(!total()&&!S.pending)?'disabled':'')+'>'+
+ '<button class="primary checkout-btn" data-action="checkout" '+(S.busy||(!total()&&!S.pending)||(!S.openShift&&!S.pending)?'disabled':'')+'>'+
  (S.pending?'Verificar cobro pendiente':'Registrar venta')+'</button>'+
+ (!S.openShift?'<div class="caution">Primero abre un turno de caja. <button data-action="page" data-page="caja">Ir a Caja</button></div>':'')+
  '<p class="fine">Sin receta de consumo configurada o sin existencias suficientes, la venta será rechazada.</p>'+
  '<div class="caution">Esta versión es beta. No utilizar todavía para cobrar ventas reales.</div></div>';
 }
@@ -224,6 +266,7 @@ function adminMore(){
  ['lotes','Lotes preparados','Materias primas y productos terminados.','inventory'],
  ['consumo','Consumo por venta','Cantidad descontada por cada pedido.','cart'],
  ['precios','Precios','Edición e historial de precios.','cash'],
+ ['caja','Corte de caja','Abrir, revisar y cerrar turnos con arqueo.','cash'],
  ['cuenta','Cuenta y seguridad','Contraseña y recuperación de acceso.','team']];
  return '<div class="panel"><span class="eyebrow">CONFIGURACIÓN PRIVADA</span><h1 style="margin-top:6px">Más opciones</h1>'+
  '<p>Solo el propietario puede modificar recetas, precios o las reglas de consumo.</p>'+
@@ -367,13 +410,13 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
  else if(action==='verify'){const token=$('otp')?.value||'';if(!email||!token)throw Error('Escribe el correo y el código');const auth=await api('/auth/v1/verify',{method:'POST',body:JSON.stringify({email,token,type:'email'})});storeSession(auth);await setUser()}
  else if(action==='save-password'){const pw=$('newpass')?.value||'',confirm=$('newpass2')?.value||'';if(pw.length<12||pw.length>128)throw Error('Usa una contraseña de 12 a 128 caracteres');if(pw!==confirm)throw Error('Las contraseñas no coinciden');if(!S.session?.access_token)throw Error('Vuelve a iniciar sesión antes de guardar la contraseña');await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})});S.recovery=false;S.message='Contraseña guardada correctamente. En el siguiente inicio podrás usar tu correo y contraseña.';}
  else if(action==='recover'){if(!email)throw Error('Escribe primero tu correo electrónico');await api('/auth/v1/recover?redirect_to='+enc(location.origin+location.pathname),{method:'POST',body:JSON.stringify({email})});S.message='Si el correo tiene una cuenta, recibirás un enlace para restablecer la contraseña.';return}
- else if(action==='logout'){storeSession(null);S.staff=null;S.cart={};S.pending=null;S.daily=null;S.team=[];S.lastSyncAt=null;sessionStorage.removeItem('corderito_pending');light(false)}
- else if(action==='page'){S.page=btn.dataset.page}
+ else if(action==='logout'){storeSession(null);S.staff=null;S.cart={};S.pending=null;S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;S.lastSyncAt=null;sessionStorage.removeItem('corderito_pending');light(false)}
+ else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page}
  else if(action==='category'){S.selectedCategory=btn.dataset.category}
  else if(action==='server'){S.message='Estado del servidor: '+(S.online?'conexión disponible':'sin sincronización verificada')+'. Última sincronización completa: '+(S.lastSyncAt?new Date(S.lastSyncAt).toLocaleString('es-MX',{timeZone:'America/Merida'}):'pendiente');}
  else if(action==='plus'||action==='minus'){const id=btn.dataset.id;S.cart[id]=Math.max(0,Number(S.cart[id]||0)+(action==='plus'?1:-1));}
  else if(action==='sync'){await sync();S.message='Datos sincronizados'}
- else if(action==='checkout'){S.payment=$('payment')?.value||S.payment;await checkout();return}
+ else if(action==='checkout'){if(!S.openShift)throw Error('Primero abre tu turno en Caja antes de registrar ventas');S.payment=$('payment')?.value||S.payment;await checkout();return}
  
  else if(['ingredient-new','ingredient-edit','ingredient-cancel','ingredient-save',
           'recipe-new','recipe-edit','recipe-add-line','recipe-remove-line','recipe-cancel','recipe-save',
