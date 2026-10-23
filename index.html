@@ -73,7 +73,7 @@ footer{padding-bottom:85px}
 .dashboard-link{display:block;text-decoration:none;text-align:center;padding:12px;background:#fbeaec;color:#92233c;border:1px solid #eed4db;border-radius:12px;margin:13px 0;font-weight:750;font-size:12px}
 </style></head><body>
 <header><div class="brand"><span class="logo">🐑</span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.9 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.10 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
@@ -256,9 +256,13 @@ function teamView(){
  const employees=S.team.filter(t=>t.role==='employee');
  return '<div class="panel"><div class="section-head"><div><span class="eyebrow">EL CORDERITO · PERSONAL</span><h1>Empleados</h1></div>'+
  '<span class="mini-tag good">'+employees.filter(t=>t.active).length+' activos</span></div>'+
- '<p>Autoriza trabajadores sin compartir tu contraseña de administrador. Las cuentas nuevas comienzan sin acceso hasta verificarse y activarse.</p>'+
- '<a class="dashboard-link" target="_blank" rel="noopener noreferrer" href="https://supabase.com/dashboard/project/xqdzpdbdvevqspshgxzk/auth/users">Invitar una cuenta nueva desde Supabase ↗</a>'+
- '<p class="fine">En Authentication → Users usa «Invite user». Cuando acepten el correo, pulsa Actualizar aquí y activa su cuenta.</p>'+
+ '<p>Invita a un trabajador usando su propio correo. Su cuenta comenzará desactivada y no tendrá acceso a las opciones administrativas.</p>'+
+ '<div class="staff-card"><h2>Invitar empleado de prueba</h2>'+
+ '<label>Nombre del empleado</label><input id="invite-name" maxlength="80" autocomplete="off" placeholder="Ej. Cajero de prueba">'+
+ '<label>Correo electrónico del empleado</label><input id="invite-email" type="email" inputmode="email" autocomplete="off" maxlength="254" placeholder="correo-del-empleado@ejemplo.com">'+
+ '<p class="fine">Supabase enviará la invitación a esa dirección. No escribas tu propio correo de administrador.</p>'+
+ '<button class="primary" data-action="team-invite">Enviar invitación</button></div>'+
+ '<p class="fine">Después de que el empleado confirme el correo, pulsa Actualizar y activa su acceso desde la lista.</p>'+
  '<button data-action="sync">Actualizar lista de empleados</button></div>'+
  '<div class="panel"><div class="section-head"><h2>Personal registrado</h2><span class="mini-tag">'+employees.length+' cuentas</span></div>'+
  (S.team.length?S.team.map(t=>{
@@ -484,6 +488,21 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
  else if(action==='sync'){await sync();S.message='Datos sincronizados'}
  else if(action==='checkout'){if(!S.openShift)throw Error('Primero abre tu turno en Caja antes de registrar ventas');S.payment=$('payment')?.value||S.payment;await checkout();return}
 
+ else if(action==='team-invite'){
+   if(S.staff?.role!=='admin')throw Error('Solo el administrador puede invitar empleados');
+   const name=String($('invite-name')?.value||'').trim();
+   const workerEmail=String($('invite-email')?.value||'').trim().toLowerCase();
+   if(name.length<2||name.length>80||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(workerEmail))
+      throw Error('Escribe un nombre y un correo electrónico válidos');
+   if(workerEmail===String(S.userEmail||'').toLowerCase())
+      throw Error('Debes usar un correo distinto del administrador');
+   if(!confirm('¿Enviar una invitación al correo '+workerEmail+'?'))return;
+   const answer=await api('/functions/v1/corderito-invite-employee',{
+     method:'POST',body:JSON.stringify({email:workerEmail,display_name:name})
+   });
+   await sync();
+   S.message=answer.message||'Invitación enviada. La cuenta está pendiente de activación.';
+ }
  else if(action==='team-save'||action==='team-toggle'){
    if(S.staff?.role!=='admin')throw Error('Solo el administrador puede gestionar empleados');
    const id=btn.dataset.id,user=S.team.find(x=>x.user_id===id);
