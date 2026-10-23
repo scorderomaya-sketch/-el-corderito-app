@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- White cloud-like wool -->
+    <path android:fillColor="#FFF9EE" android:pathData="M34,42 C28,34 33,26 42,29 C47,20 59,20 65,29 C77,27 82,38 75,44 C82,53 77,63 68,64 C62,72 47,72 40,65 C28,66 22,55 34,42 Z"/>
+    <!-- Left and right ears -->
+    <path android:fillColor="#E9B2B2" android:pathData="M33,49 C18,44 20,61 35,60 Z M75,49 C90,44 88,61 73,60 Z"/>
+    <!-- Face -->
+    <path android:fillColor="#EED0B2" android:pathData="M39,42 C47,35 64,35 70,43 C77,55 69,70 54,72 C39,70 31,53 39,42 Z"/>
+    <!-- Eyes -->
+    <path android:fillColor="#3D2730" android:pathData="M45,50 m-2.2,0 a2.2,2.2 0,1 0,4.4 0 a2.2,2.2 0,1 0,-4.4 0 M63,50 m-2.2,0 a2.2,2.2 0,1 0,4.4 0 a2.2,2.2 0,1 0,-4.4 0"/>
+    <!-- Nose -->
+    <path android:fillColor="#8A5056" android:pathData="M51,60 Q54,56 57,60 Q54,65 51,60 Z"/>
+</vector>
