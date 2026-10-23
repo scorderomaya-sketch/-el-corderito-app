@@ -179,7 +179,28 @@ function sale(){
  '<p class="fine">Sin receta de consumo configurada o sin existencias suficientes, la venta será rechazada.</p>'+
  '<div class="caution">Esta versión es beta. No utilizar todavía para cobrar ventas reales.</div></div>';
 }
-function inventory(){return '<div class="panel"><h1>Inventario</h1><p>Existencias obtenidas desde la base de datos.</p>'+S.ingredients.map(i=>'<div class="item row"><div><b>'+esc(i.name)+'</b><small>'+Number(i.stock)+' '+esc(i.unit)+' · mínimo '+Number(i.min_stock)+'</small></div>'+(Number(i.stock)<=Number(i.min_stock)?'<span class="pill warn">Bajo</span>':'<span class="pill">OK</span>')+'</div>').join('')+'</div>'+(S.staff.role==='admin'?'<div class="panel"><h2>Movimiento de inventario</h2><label>Ingrediente</label><select id="ingredient">'+S.ingredients.map(i=>'<option value="'+i.id+'">'+esc(i.name)+'</option>').join('')+'</select><label>Cantidad (negativa para merma)</label><input id="delta" type="number" step="any" inputmode="decimal" placeholder="Ej. 5 o -0.5"><label>Motivo</label><input id="reason" maxlength="200" placeholder="Compra o merma registrada"><p></p><button class="primary" data-action="adjust">Guardar movimiento</button></div>':'')}
+
+function inventory(){
+ const low=S.ingredients.filter(i=>Number(i.min_stock)>0&&Number(i.stock)<=Number(i.min_stock));
+ return '<div class="panel"><div class="section-head"><div><span class="eyebrow">EL CORDERITO · EXISTENCIAS</span><h1>Inventario</h1></div>'+
+ '<span class="mini-tag">'+low.length+' alertas</span></div><p>Existencias consultadas del servidor. Los niveles mínimos los establece el administrador.</p>'+
+ (S.staff.role==='admin'?'<button data-action="page" data-page="ingredientes">+ Administrar ingredientes</button><p></p>':'')+
+ (S.ingredients.length?S.ingredients.map(i=>{
+ const stock=Number(i.stock),minimum=Number(i.min_stock),isLow=minimum>0&&stock<=minimum;
+ const pct=minimum>0?Math.max(0,Math.min(100,stock/(minimum*2)*100)):100;
+ return '<div class="stock-entry"><div class="row"><b style="font-size:13px">'+esc(i.name)+'</b>'+
+ '<span class="mini-tag '+(isLow?'':'good')+'">'+(isLow?'Stock bajo':'Registrado')+'</span></div>'+
+ '<small>'+stock+' '+esc(i.unit)+' disponibles · mínimo '+minimum+' '+esc(i.unit)+'</small>'+
+ (minimum>0?'<div class="stock-track"><div class="stock-fill" style="background:'+(isLow?'#e5a248':'#36a17b')+';width:'+pct.toFixed(1)+'%"></div></div>':'')+
+ '</div>';
+ }).join(''):'<div class="empty">Todavía no hay ingredientes. El administrador puede registrarlos desde Más.</div>')+'</div>'+
+ (S.staff.role==='admin'?'<div class="panel"><span class="eyebrow">AJUSTES</span><h2 style="margin-top:6px">Movimiento de inventario</h2>'+
+ '<p>Registra entradas por compra o salidas por merma. El historial identifica al usuario que realiza el movimiento.</p>'+
+ '<label>Ingrediente</label><select id="ingredient">'+S.ingredients.map(i=>'<option value="'+i.id+'">'+esc(i.name)+' ('+esc(i.unit)+')</option>').join('')+'</select>'+
+ '<label>Cantidad (negativa para merma)</label><input id="delta" type="number" step="any" inputmode="decimal" placeholder="Ej. 5 o -0.5">'+
+ '<label>Motivo</label><input id="reason" maxlength="200" placeholder="Ej. Compra de teleras o merma">'+
+ '<p></p><button class="primary checkout-btn" data-action="adjust" '+(S.ingredients.length?'':'disabled')+'>Guardar movimiento</button></div>':'');
+}
 function prices(){return '<div class="panel"><h1>Editar precios</h1><p>Solo administración. Cada cambio queda registrado y no modifica ventas antiguas.</p>'+S.products.map(p=>'<div class="item"><b>'+esc(p.name)+'</b><div class="row"><input id="price-'+p.id+'" type="number" step=".01" min="0.01" value="'+Number(p.price)+'" style="max-width:130px"><label style="margin:0"><input id="active-'+p.id+'" style="width:auto" type="checkbox" '+(p.active?'checked':'')+'> Activo</label><button data-action="price" data-id="'+p.id+'">Guardar</button></div></div>').join('')+'</div><div class="panel"><h2>Historial de precios</h2>'+S.priceHistory.map(h=>'<div class="item"><b>'+esc(S.products.find(p=>p.id===h.product_id)?.name||'Producto')+'</b><small>'+money(h.old_price)+' → '+money(h.new_price)+' · '+esc(new Date(h.changed_at).toLocaleString('es-MX'))+'</small></div>').join('')+'</div>'}
 
 function teamView(){
@@ -195,11 +216,21 @@ function teamView(){
 
 function accountView(){return '<div class="panel"><h1>Mi cuenta</h1><p>Iniciaste sesión como <b>'+esc(S.userEmail||'Cuenta autorizada')+'</b>.</p><h2>'+ (S.recovery?'Restablecer contraseña':'Crear o cambiar contraseña') +'</h2><p>Elige una contraseña exclusiva para El Corderito. Podrás volver a iniciar sesión con tu correo y esta contraseña.</p><label>Nueva contraseña</label><input id="newpass" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Mínimo 12 caracteres"><label>Confirma la nueva contraseña</label><input id="newpass2" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Repite tu contraseña"><p></p><button class="primary" data-action="save-password">Guardar contraseña</button><p class="fine">No compartas tu contraseña. También puedes seguir usando el enlace por correo.</p></div>'}
 
+
 function adminMore(){
- return '<div class="panel"><h1>Administración</h1><p>Configuración privada para el propietario.</p>'+
- [['ingredientes','Ingredientes y suministros','Crear ingredientes, unidades y niveles mínimos.'],['recetas','Recetario privado','Porciones, componentes y pasos de cocina.'],['lotes','Lotes preparados','Transforma materia prima en producto listo.'],['consumo','Consumo por venta','Define cuánto se descuenta al vender.'],['precios','Precios','Ajustes e historial.'],['cuenta','Cuenta','Contraseña y seguridad.']].map(t=>
- '<div class="item row"><div><b>'+esc(t[1])+'</b><small>'+esc(t[2])+'</small></div><button data-action="page" data-page="'+t[0]+'">Abrir ›</button></div>'
- ).join('')+'</div><div class="panel"><h2>Importante</h2><p>Las recetas de preparación documentan cómo cocinar. Solo el consumo por venta modifica inventario al cobrar. Los lotes preparados se integrarán por separado para evitar descontar dos veces.</p></div>';
+ const menus=[
+ ['ingredientes','Ingredientes y suministros','Altas, unidades y niveles mínimos.','inventory'],
+ ['recetas','Recetario privado','Porciones, componentes y pasos de cocina.','receipt'],
+ ['lotes','Lotes preparados','Materias primas y productos terminados.','inventory'],
+ ['consumo','Consumo por venta','Cantidad descontada por cada pedido.','cart'],
+ ['precios','Precios','Edición e historial de precios.','cash'],
+ ['cuenta','Cuenta y seguridad','Contraseña y recuperación de acceso.','team']];
+ return '<div class="panel"><span class="eyebrow">CONFIGURACIÓN PRIVADA</span><h1 style="margin-top:6px">Más opciones</h1>'+
+ '<p>Solo el propietario puede modificar recetas, precios o las reglas de consumo.</p>'+
+ menus.map(t=>'<div class="activity-line"><div class="activity-glyph">'+ico(t[3])+'</div>'+
+ '<div class="activity-main"><b>'+esc(t[1])+'</b><small>'+esc(t[2])+'</small></div>'+
+ '<button data-action="page" data-page="'+t[0]+'" aria-label="Abrir '+esc(t[1])+'">'+ico('arrow')+'</button></div>').join('')+'</div>'+
+ '<div class="caution">Guardar una receta documenta su preparación; registrar un lote transforma existencias y cobrar una venta descuenta sus ingredientes. Cada operación se contabiliza por separado.</div>';
 }
 function ingredientEditor(){
  const x=S.ingredients.find(i=>i.id===S.editIngredient),edit=!!x;
@@ -322,6 +353,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
  const t=e.target;
+ if(t.id==='payment')S.payment=t.value;
  if(S.staff?.role!=='admin')return;
  if(S.recipeDraft&&t.dataset.rLine!==undefined){const line=S.recipeDraft.lines[Number(t.dataset.rLine)];if(line)line[t.dataset.part]=t.value;}
  if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
