@@ -71,8 +71,9 @@ footer{padding-bottom:85px}
 .staff-card input{width:100%}
 .staff-card .row{flex-wrap:wrap}
 .dashboard-link{display:block;text-decoration:none;text-align:center;padding:12px;background:#fbeaec;color:#92233c;border:1px solid #eed4db;border-radius:12px;margin:13px 0;font-weight:750;font-size:12px}
+.logo{background:#fbf7ed url(data:image/webp;base64,UklGRhQFAABXRUJQVlA4IAgFAACwGACdASpQAFAAPpE8mEiloyIhKln9KLASCWMAzVAyXth/yXRjeYT93835Qf4jwN3iP8o/zO/g1z9AL1E+c/6j8yPFu9Fu2o4zCgB/Iv736p/9D4zfyr/Cf+H3Bf5N/V/992LvSmcppRDRIZHlMR/fDKON0ShmBHPrHd83fsDqFKzwqqiFoRikbmefH8/mq9vxd6vF42gf5yFxAPGw5EnRh5yOeY8pZ32xNG6/0IvmgkT1eifj9bKN11FNVzzAo5Hwx8XBklwI27n064qUwAD+/OxB8szhXsNW2pLujGNPJrlTnxWLczfwzobj/TkSxF8gKEN0q76RzVg1PeXTShqHLpTzuiVkPu4CqMqYARqHQmGX5iVKqFDOx2h5QD9ob7G7inpyDDhv3XQjhk6w/BTvyanpWM/R0jcqsSJfo9e/YctDDuh2l9/J1oMCIhwEhjfQVHq5KAP/O/4GLMDP60xW9LWDV8wRyztuir61fR/7g2hrrimRPKWNLpOiryIQNs9/aX1kgOrEBbQzGq96yFdz/Sxw9Kpg3+Bs8zdR6leA+/j+Tv8Q0F3BC2cxK1M82mgI1uY0LohyANrG19M4gTXUAR+XKYPocnKihW//TNuyYlni3NOYpdarflgr06ot5Rh1NmpGZAn/+CUSV36jWrVlOMlO8tXizu8y2uSWrubb6AGLOAOgX8u4RsSf7yzOCdFemrpzQx2fv+QXJvbNZpxMnyCn97P7xDTwOVn5ssYTlup2IxGMeB4xxL9bnq0/fXprOZTooVUUJ6PCpxVGHpfTnGH2SBaQbWzJLbdBRS6ul4/UmnzMk7v5edcTvBiZzBg3+J1/BwOUh0YM8HOgBQHWZJMesNlx4AfHP69auWQ60H5QYq655mJ8D+rMeToMsvj2qcIBD4lqum2BbywhFLQA1JKNw6zzAPiWYp3YHE8BD/q7n/K49zoXM0M6vhy+jiNpn1/YRJrE/sH/8a741Ul5FesbwElOzTyu41+ZCYtmEpJQMuxtV0LwUepKFmeHF0KFRIcAMUdTQIzWBc8vSfDvxzVT6ydj0eOe7rt38rWPdf8BX20yPouIU2D8W7OJVunAcOoKTW0KB+Rm+ZRcP3XUhvJL+4/8i2MvJdYhDkcPRRUKq6bCGJWBT8eH6BlYrqUIwLHMlfGCB6Io/jnVTSNlcl7NZ4F1jxn+dg2gBlYroHam0xm8x8UAfdUAKuHoatGCbz0wCeLWZikqcgn8ppd0HRJThqNwCedJlRKmpZnGDyNziGzDjgU3xMo67r+b8JbH4Kn3Heh0zz5CzDga1NQJOWt9ZHzNDQCQFEa7Z3N4hQrCsN4Yg9U3/WXrpQX4pkcOJLWCr4ZGapqZSvCpB+D7u2+Tk6LM51RPDnXqTe0myKLkREYCqgSwrmb+qNJCd99zgW54Hln+5RSnWDIR19Sfu8dODX+dTcsoEqBwxUBi2wiFfPzvDVOHTWEWoMf0tjCagCugaAgbM3o9Zh4tQsjJKIjLLLoq9HZpYINWWnxrxlP+gPSlQMhuCkAg0E+niFLi3eJ6x/8B2t1Ebjs25H7H6oBghthgipuvnS/u7MSS5vkoQDpoJc0UFUk2if2uIF46Ug/45WLfoqUfo8106Lmi5llfGtWYzfSfPNUKk/+XAHL/rToF58DRIlkc9kj209sZ4CDxoJgdKw8oN8awhyycbedJyFvfbqoxR0MHfIEi3nqsMgHOsAAA) center/cover no-repeat!important;display:block!important;width:50px;height:50px;flex:0 0 50px;border-radius:13px;border:1px solid #eee1cd;font-size:0!important;overflow:hidden}
 </style></head><body>
-<header><div class="brand"><span class="logo">🐑</span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
+<header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
 <main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.10 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
@@ -492,7 +493,7 @@ async function click(e){const btn=e.target.closest('[data-action]');if(!btn)retu
    if(S.staff?.role!=='admin')throw Error('Solo el administrador puede invitar empleados');
    const name=String($('invite-name')?.value||'').trim();
    const workerEmail=String($('invite-email')?.value||'').trim().toLowerCase();
-   if(name.length<2||name.length>80||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(workerEmail))
+   if(name.length<2||name.length>80||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workerEmail))
       throw Error('Escribe un nombre y un correo electrónico válidos');
    if(workerEmail===String(S.userEmail||'').toLowerCase())
       throw Error('Debes usar un correo distinto del administrador');
