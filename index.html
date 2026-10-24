@@ -81,9 +81,10 @@ footer{padding-bottom:85px}
 .calendar-day b{font-size:14px}.calendar-day small{font-size:8px;line-height:1.1;overflow-wrap:anywhere;max-width:100%}
 .calendar-day.selected{background:#a71b3b;color:#fff}.calendar-day.selected small{color:#fff}
 .history-receipt{padding:12px;border:1px solid #eee7e1;border-radius:12px;margin:10px 0}.history-receipt small{display:block;font-size:10px;color:#8e8184}
+.compare-card{border:1px solid #f1b7c5;border-radius:12px;background:#fff8fa;padding:11px;color:#8e2040;margin:13px 0}.compare-card small{display:block;font-size:10px;margin-top:6px;color:#90556a}.promo-hint{display:block;color:#a31a43;font-size:11px}.promo-savings{font-size:12px;color:#237d56;font-weight:750}
 </style></head><body>
 <header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.11 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.12 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
@@ -145,7 +146,7 @@ function resetAccount(){
  S.consumptionDraft=null;S.consumptionProduct=null;S.editIngredient=null;
  S.batches=[];S.batchPending=null;S.pending=null;S.cart={};S.payment='cash';
  S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;
- S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;light(false);
+ S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;light(false);
 }
 async function leaveAccount(){
  if(S.pending||S.batchPending||S.pendingCashMovement)
@@ -317,6 +318,9 @@ function summary(){
  const recent=S.sales.slice(0,7);
  return '<div class="hero"><span class="eyebrow">EL CORDERITO · ADMINISTRACIÓN</span><p style="margin-top:16px">Ventas del día</p>'+
  '<h1>'+(d?money(d.total):'—')+'</h1><p>'+esc(day)+' · Total calculado por el servidor</p>'+
+ '<div class="compare-card"><b>Comparación con ayer: '+(d?.change_percent===null||d?.change_percent===undefined?'Sin referencia':(Number(d.change_percent)>0?'+':'')+Number(d.change_percent).toFixed(1)+'%')+'</b>'+
+ '<small>Ayer '+money(d?.yesterday_total||0)+' · Hoy '+money(d?.total||0)+'. Compara hoy hasta ahora contra el día anterior completo.</small>'+
+ '<div class="quick"><button data-action="page" data-page="historial">Ver historial por fecha ›</button></div></div>'+
  '<div class="quick"><button data-action="page" data-page="ventas">'+ico('cart')+' Nueva venta</button>'+
  '<button data-action="page" data-page="inventario">'+ico('inventory')+' Inventario</button></div></div>'+
  '<div class="dashboard-metrics">'+
@@ -354,6 +358,7 @@ function sale(){
  '<div class="catalogue">'+(displayed.length?displayed.map(p=>
  '<div class="product-card"><div class="glyph">'+menuEmoji(p)+'</div><small>'+esc(p.category)+'</small>'+
  '<b>'+esc(p.name)+'</b><div class="price">'+money(p.price)+'</div>'+
+ (S.promotions.filter(o=>o.product_id===p.id&&o.active).length?'<small class="promo-hint">'+S.promotions.filter(o=>o.product_id===p.id&&o.active).map(o=>o.bundle_qty+'× '+money(o.bundle_price)).join(' · ')+'</small>':'')+
  '<div class="qty"><button data-action="minus" data-id="'+p.id+'" aria-label="Quitar '+esc(p.name)+'">−</button>'+
  '<b>'+Number(S.cart[p.id]||0)+'</b><button data-action="plus" data-id="'+p.id+'" aria-label="Agregar '+esc(p.name)+'">+</button></div></div>').join(''):
  '<div class="empty">No hay productos en esta categoría.</div>')+'</div></div>'+
@@ -361,8 +366,10 @@ function sale(){
  '<span class="mini-tag good">'+selected.reduce((n,p)=>n+Number(S.cart[p.id]),0)+' unidades</span></div>'+
  (selected.length?selected.map(p=>
  '<div class="item row"><div><b>'+esc(p.name)+'</b><small>x '+Number(S.cart[p.id])+' · '+money(p.price)+' por unidad</small></div>'+
- '<b>'+money(Number(S.cart[p.id])*Number(p.price))+'</b></div>').join(''):'<p>No has agregado ningún producto.</p>')+
+ '<b>'+money(bestLinePrice(p,S.cart[p.id]).total)+'</b></div>'+
+ (bestLinePrice(p,S.cart[p.id]).discount>0?'<small class="promo-hint">Descuento aplicado: '+money(bestLinePrice(p,S.cart[p.id]).discount)+'</small>':'')).join(''):'<p>No has agregado ningún producto.</p>')+
  '<div class="row" style="margin:16px 0"><b>Total estimado</b><span class="checkout-total">'+money(total())+'</span></div>'+
+ (grossTotal()>total()?'<p class="promo-savings">Ahorro estimado por promociones: '+money(grossTotal()-total())+'</p>':'')+
  '<label>Método de pago</label><select id="payment"><option value="cash" '+(S.payment==='cash'?'selected':'')+'>Efectivo</option>'+
  '<option value="transfer" '+(S.payment==='transfer'?'selected':'')+'>Transferencia</option>'+
  '<option value="card" '+(S.payment==='card'?'selected':'')+'>Tarjeta</option></select><p></p>'+
@@ -687,7 +694,26 @@ else if(action==='logout'){await leaveAccount();S.message='Sesión cerrada en es
  else if(action==='select-account'){S.loginPrefill=btn.dataset.email||'';S.message='Escribe la contraseña de '+S.loginPrefill+'.';}
  else if(action==='forget-account'){forgetEmail(btn.dataset.email||'');S.message='Se quitó el correo recordado de este teléfono.';}
 
- else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page}
+ else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page;if(S.page==='historial'&&!S.monthStats)await loadMonth();}
+ else if(action==='offer-save'){
+  if(S.staff.role!=='admin')throw Error('Solo administrador');
+  const id=btn.dataset.id,qty=Number(btn.dataset.qty),product=S.products.find(p=>p.id===id);
+  const price=Number($('offer-'+id+'-'+qty)?.value),active=!!$('offer-on-'+id+'-'+qty)?.checked;
+  if(!product||![2,3].includes(qty)||!Number.isFinite(price)||price<=0||price>=qty*Number(product.price)||
+     Math.round(price*100)!==price*100)throw Error('El precio de oferta debe ser positivo, inferior al precio normal y tener máximo dos decimales');
+  if(active&&!confirm('¿Activar la oferta de '+qty+' por '+money(price)+' para '+product.name+'? Se aplicará en las nuevas ventas.'))return;
+  await api('/rest/v1/rpc/admin_upsert_promotion',{method:'POST',body:JSON.stringify({p_product:id,p_bundle:qty,p_price:price,p_active:active})});
+  await sync();S.message='Oferta guardada'+(active?' y activada':' (inactiva)');
+ }
+ else if(action==='history-prev'||action==='history-next'){
+  if(S.staff.role!=='admin')throw Error('Solo administrador');
+  S.historyMonth=advanceMonth(action==='history-next'?1:-1);
+  S.historyDay=null;await loadMonth();
+ }
+ else if(action==='history-day'){
+  if(S.staff.role!=='admin')throw Error('Solo administrador');
+  await loadDay(btn.dataset.day);
+ }
  else if(action==='category'){S.selectedCategory=btn.dataset.category}
  else if(action==='server'){S.message='Estado del servidor: '+(S.online?'conexión disponible':'sin sincronización verificada')+'. Última sincronización completa: '+(S.lastSyncAt?new Date(S.lastSyncAt).toLocaleString('es-MX',{timeZone:'America/Merida'}):'pendiente');}
  else if(action==='plus'||action==='minus'){const id=btn.dataset.id;S.cart[id]=Math.max(0,Number(S.cart[id]||0)+(action==='plus'?1:-1));}
