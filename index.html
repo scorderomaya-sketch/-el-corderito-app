@@ -79,7 +79,7 @@ footer{padding-bottom:85px}
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -201,8 +201,10 @@ async function sync(){
  '/rest/v1/recipe_ingredients?select=recipe_id,ingredient_id,quantity',
  '/rest/v1/product_ingredients?select=product_id,ingredient_id,quantity',
  '/rest/v1/preparation_batches?select=id,recipe_id,recipe_name_snapshot,prepared_ingredient_id,scale_factor,planned_yield,actual_yield,notes,created_at&order=created_at.desc&limit=30',
- '/rest/v1/rpc/admin_daily_sales_summary');
+ '/rest/v1/rpc/admin_daily_sales_summary',
+ '/rest/v1/promotion_history?select=product_id,bundle_qty,old_price,new_price,old_active,new_active,changed_at&order=changed_at.desc&limit=30');
  paths.push(
+ '/rest/v1/product_promotions?select=product_id,bundle_qty,bundle_price,active&order=bundle_qty.asc',
  '/rest/v1/cash_shifts?select=id,staff_id,opened_at,opening_cash,closed_at,closed_by,counted_cash,expected_cash,cash_sales,noncash_sales,cash_in,cash_out,difference,notes&order=opened_at.desc&limit=150',
  '/rest/v1/cash_movements?select=id,shift_id,actor_id,kind,amount,reason,created_at&order=created_at.desc&limit=100');
  const answers=await Promise.all(paths.map(path=>api(path)));
@@ -214,8 +216,10 @@ async function sync(){
    S.productParts=answers[6]||[];
    S.batches=answers[7]||[];
    S.daily=answers[8]||null;
+   S.promotionHistory=answers[9]||[];
  }
- const idx=admin?9:3;
+ S.promotions=answers[admin?10:3]||[];
+ const idx=admin?11:4;
  S.shifts=answers[idx]||[];
  S.cashMovements=answers[idx+1]||[];
  S.openShift=S.shifts.find(x=>x.staff_id===S.staff.user_id&&!x.closed_at)||null;
@@ -256,6 +260,48 @@ function nav(){
 
 function displayPayment(p){return p==='cash'?'Efectivo':p==='card'?'Tarjeta':'Transferencia'}
 function localTime(t){return new Date(t).toLocaleString('es-MX',{timeZone:'America/Merida',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+
+function localDateKey(date=new Date()){
+ return date.toLocaleDateString('sv-SE',{timeZone:'America/Merida'});
+}
+function bestLinePrice(product,quantity){
+ const q=Math.max(0,Math.floor(Number(quantity)||0)),unit=Number(product.price);
+ if(!product.active||q===0)return {total:0,base:0,discount:0,bundles:[]};
+ const promo=S.promotions.filter(p=>p.product_id===product.id&&p.active);
+ const two=promo.find(p=>Number(p.bundle_qty)===2),three=promo.find(p=>Number(p.bundle_qty)===3);
+ let best=unit*q,b2=0,b3=0;
+ for(let n3=0;n3<=Math.floor(q/3);n3++){
+  if(n3&&!three)continue;
+  for(let n2=0;n2<=Math.floor((q-3*n3)/2);n2++){
+   if(n2&&!two)continue;
+   const singles=q-3*n3-2*n2,price=singles*unit+n2*Number(two?.bundle_price||0)+n3*Number(three?.bundle_price||0);
+   if(price<best){best=price;b2=n2;b3=n3;}
+  }
+ }
+ return {total:Math.round(best*100)/100,base:unit*q,discount:Math.round((unit*q-best)*100)/100,
+  bundles:[...(b2?[{bundle_qty:2,bundles:b2}]:[]),...(b3?[{bundle_qty:3,bundles:b3}]:[])]};
+}
+function grossTotal(){return S.products.reduce((sum,p)=>sum+Number(S.cart[p.id]||0)*Number(p.price),0)}
+async function loadMonth(){
+ if(!S.staff||S.staff.role!=='admin')throw Error('Solo administrador');
+ if(!S.historyMonth)S.historyMonth=localDateKey().slice(0,7);
+ const r=await api('/rest/v1/rpc/admin_sales_month',{method:'POST',body:JSON.stringify({p_month:S.historyMonth+'-01'})});
+ S.monthStats=r;
+ if(!S.historyDay||!S.historyDay.startsWith(S.historyMonth))
+  S.historyDay=(localDateKey().startsWith(S.historyMonth)?localDateKey():S.historyMonth+'-01');
+ await loadDay(S.historyDay);
+}
+async function loadDay(date){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('Fecha inválida');
+ const r=await api('/rest/v1/rpc/admin_sales_day_details',{method:'POST',body:JSON.stringify({p_date:date})});
+ S.historyDay=date;S.dayDetails=r;
+}
+function advanceMonth(offset){
+ const [year,month]=S.historyMonth.split('-').map(Number);
+ const d=new Date(Date.UTC(year,month-1+offset,1));
+ return d.toISOString().slice(0,7);
+}
+
 function summary(){
  const d=S.daily,low=S.ingredients.filter(i=>Number(i.min_stock)>0&&Number(i.stock)<=Number(i.min_stock));
  const day=new Date().toLocaleDateString('es-MX',{timeZone:'America/Merida',weekday:'long',day:'numeric',month:'long'});
@@ -281,7 +327,7 @@ function summary(){
  '<p class="fine">Se muestran las 7 ventas más recientes. El total de hoy incluye todas las ventas, no solo las últimas 100.</p></div>'+
  '<div class="caution">Las ventas en efectivo no son lo mismo que el efectivo esperado en caja. El corte por turno se incorporará por separado.</div>';
 }
-function total(){return S.products.reduce((a,p)=>a+Number(S.cart[p.id]||0)*Number(p.price),0)}
+function total(){return S.products.reduce((a,p)=>a+bestLinePrice(p,S.cart[p.id]||0).total,0)}
 
 function menuEmoji(p){
  const n=(p.name+' '+p.category).toLowerCase();
