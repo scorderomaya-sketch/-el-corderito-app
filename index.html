@@ -520,6 +520,9 @@ function historyView(){
  '<p>Efectivo '+money(detail.cash)+' · Tarjeta '+money(detail.card)+' · Transferencia '+money(detail.transfer)+'</p>'+
  '<h2>Ventas por empleado</h2>'+(detail.staff?.length?detail.staff.map(t=>'<div class="row item"><b>'+esc(t.display_name)+'</b><small>'+t.orders+' pedidos · '+money(t.total)+'</small></div>').join(''):'<p>No hubo ventas.</p>')+
  '<h2>Turnos abiertos ese día</h2>'+(detail.shifts_opened?.length?detail.shifts_opened.map(t=>'<div class="item"><b>'+esc(t.staff)+'</b><small>'+esc(localTime(t.opened_at))+' · '+(t.closed_at?'Cerrado':'Abierto')+'</small>'+
+ '<small>'+Number(t.orders||0)+' pedidos · '+money(t.sales_total||0)+' vendidos en el turno</small>'+
+ '<small>Efectivo '+money(t.cash_sales||0)+' · Transferencia '+money(t.transfer_sales||0)+' · Tarjeta '+money(t.card_sales||0)+'</small>'+
+ '<small>Entradas '+money(t.cash_in||0)+' · Retiros '+money(t.cash_out||0)+'</small>'+
  (t.closed_at?'<small>Esperado '+money(t.expected_cash)+' · contado '+money(t.counted_cash)+' · diferencia '+money(t.difference)+'</small>':'')+
  (t.notes?'<small>'+esc(t.notes)+'</small>':'')+'</div>').join(''):'<p>Ningún turno comenzó ese día.</p>')+
  '<h2>Comprobantes</h2>'+(detail.receipts?.length?detail.receipts.map(t=>'<div class="history-receipt"><div class="row"><b>'+esc(t.staff)+'</b><strong>'+money(t.total)+'</strong></div>'+
