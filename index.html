@@ -82,14 +82,31 @@ footer{padding-bottom:85px}
 .calendar-day.selected{background:#a71b3b;color:#fff}.calendar-day.selected small{color:#fff}
 .history-receipt{padding:12px;border:1px solid #eee7e1;border-radius:12px;margin:10px 0}.history-receipt small{display:block;font-size:10px;color:#8e8184}
 .compare-card{border:1px solid #f1b7c5;border-radius:12px;background:#fff8fa;padding:11px;color:#8e2040;margin:13px 0}.compare-card small{display:block;font-size:10px;margin-top:6px;color:#90556a}.promo-hint{display:block;color:#a31a43;font-size:11px}.promo-savings{font-size:12px;color:#237d56;font-weight:750}
+
+.report-options{display:flex;gap:8px;margin:16px 0 10px}.report-options button{flex:1}.report-options button.selected{background:#a71936;color:white;border-color:#a71936}
+.report-nav{margin:11px 0}.report-nav b{font-size:14px;text-align:center}
+.report-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.report-kpi{background:#fffdf9;border:1px solid #efe2dc;border-radius:13px;padding:15px 12px;min-width:0}
+.report-kpi small{display:block;color:#7c7373;font-size:10px;margin-bottom:9px}.report-kpi b{display:block;font-size:19px;overflow-wrap:anywhere;color:#93203b}
+.report-scroll{overflow-x:auto;overscroll-behavior-x:contain;padding:5px 1px 0}.report-chart{height:215px;display:flex;align-items:stretch;gap:5px;border-bottom:1px solid #e8dcd6;padding-bottom:8px}
+.report-chart.weekly{min-width:310px}.report-chart.monthly{min-width:690px}
+.report-bar{border:0;background:transparent;display:flex;flex:1;min-width:0;padding:4px 1px 0;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;color:#6d696b}
+.report-bar-amount{font-size:8px;line-height:1.1;min-height:14px;white-space:nowrap}
+.report-bar-column{width:85%;max-width:40px;min-height:3px;background:linear-gradient(180deg,#cf6481,#a71d3d);border-radius:5px 5px 0 0;transition:height .14s ease}
+.report-bar.selected{background:#faf0f1;border-radius:8px}.report-bar.selected .report-bar-column{background:#387d58}
+.report-bar small{font-size:10px;line-height:1.1;font-weight:650}.report-picked{display:flex;gap:7px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 0 2px;font-size:11px}.report-picked span{color:#756f6a}.report-picked button{font-size:11px}
+.report-payment{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #efeae5;font-size:12px}.report-payment strong{color:#8d273c;white-space:nowrap}
+.report-product{padding:13px 0;border-bottom:1px solid #efeae5}.report-product b{font-size:12px}.report-product strong{font-size:12px}.report-product small{display:block;margin-top:8px;color:#77726f;font-size:11px}
+.report-progress{height:6px;background:#f3ece8;border-radius:999px;margin-top:8px;overflow:hidden}.report-progress span{display:block;background:#b3334f;height:100%;border-radius:999px}
+.report-staff{padding:14px 0;border-bottom:1px solid #efeae5}.report-staff .report-payment{border-bottom:0;padding:8px 0}.report-staff small{display:block;color:#77726f;font-size:11px;margin-top:6px}
 </style></head><body>
 <header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.12 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,reportMode:'week',reportAnchor:null,reportData:null,reportSelectedDay:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -146,7 +163,7 @@ function resetAccount(){
  S.consumptionDraft=null;S.consumptionProduct=null;S.editIngredient=null;
  S.batches=[];S.batchPending=null;S.pending=null;S.cart={};S.payment='cash';
  S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;
- S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;light(false);
+ S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;S.reportData=null;S.reportAnchor=null;S.reportSelectedDay=null;light(false);
 }
 async function leaveAccount(){
  if(S.pending||S.batchPending||S.pendingCashMovement)
@@ -532,6 +549,132 @@ function historyView(){
  (detail.receipts_truncated?'<div class="caution">Se muestran los 100 comprobantes más recientes; los totales abarcan todas las ventas.</div>':'')+'</div>':'');
 }
 
+
+function reportAddDays(iso,delta){
+ const date=new Date(iso+'T12:00:00Z');
+ if(!Number.isFinite(date.getTime()))throw Error('Fecha inválida');
+ date.setUTCDate(date.getUTCDate()+delta);
+ return date.toISOString().slice(0,10);
+}
+function reportAddMonths(iso,delta){
+ const [year,month]=iso.slice(0,7).split('-').map(Number);
+ return new Date(Date.UTC(year,month-1+delta,1,12)).toISOString().slice(0,10);
+}
+function reportRange(){
+ const anchor=S.reportAnchor||localDateKey();
+ if(S.reportMode==='month'){
+  const start=anchor.slice(0,7)+'-01';
+  return {start,end:reportAddDays(reportAddMonths(start,1),-1)};
+ }
+ const day=new Date(anchor+'T12:00:00Z').getUTCDay();
+ const start=reportAddDays(anchor,-((day+6)%7));
+ return {start,end:reportAddDays(start,6)};
+}
+async function loadReport(){
+ if(S.staff?.role!=='admin')throw Error('Solo el administrador puede consultar los reportes.');
+ const range=reportRange();
+ const report=await api('/rest/v1/rpc/admin_period_report',{
+  method:'POST',body:JSON.stringify({p_start:range.start,p_end:range.end})
+ });
+ if(!report||!Array.isArray(report.days))throw Error('No se pudo cargar el reporte');
+ S.reportData=report;
+ if(!report.days.some(d=>d.date===S.reportSelectedDay)){
+  S.reportSelectedDay=report.days.some(d=>d.date===report.today_local)
+   ?report.today_local:(report.days.at(-1)?.date||null);
+ }
+}
+function reportDate(iso,opts={}){
+ if(!iso)return '—';
+ return new Date(iso+'T12:00:00Z').toLocaleDateString('es-MX',{
+  timeZone:'UTC',day:'numeric',month:'short',...opts
+ });
+}
+function reportChangeLabel(pct){
+ if(pct===null||pct===undefined)return 'Sin base comparable';
+ const n=Number(pct);
+ return (n>0?'+':'')+n.toFixed(1)+'%';
+}
+function reportView(){
+ const r=S.reportData;
+ const mode=S.reportMode;
+ const week=mode==='week';
+ const range=r||reportRange();
+ const title=week?'Reporte semanal':'Reporte mensual';
+ if(!r)return '<div class="panel"><h1>'+title+'</h1><p>Abre o actualiza este apartado para consultar las ventas registradas.</p><button data-action="report-refresh">Cargar reporte</button></div>';
+ const cur=r.current||{},prev=r.previous||{},days=r.days||[];
+ const maxAmount=Math.max(1,...days.map(d=>Number(d.total)||0));
+ const hasData=Number(cur.orders)>0;
+ const unfinished=String(r.today_local)>=r.start&&String(r.today_local)<=r.end;
+ const compared='Periodo anterior: '+reportDate(r.previous_start)+' al '+reportDate(r.previous_end);
+ const picked=days.find(d=>d.date===S.reportSelectedDay)||days.at(-1);
+ const bestUnits=Math.max(1,...(r.products||[]).map(p=>Number(p.units)||0));
+ const closed=Number(r.shifts?.closed||0);
+ return '<div class="panel"><div class="section-head"><div><span class="eyebrow">EL CORDERITO · ADMINISTRACIÓN</span><h1>Reportes de ventas</h1></div><span class="mini-tag good">Sincronizado</span></div>'+
+ '<p>Resumen calculado por Supabase a partir de las ventas registradas. No representa utilidad neta.</p>'+
+ '<div class="report-options"><button data-action="report-mode" data-mode="week" class="'+(week?'selected':'')+'">Semana</button>'+
+ '<button data-action="report-mode" data-mode="month" class="'+(!week?'selected':'')+'">Mes</button></div>'+
+ '<div class="row calendar-nav report-nav"><button data-action="report-prev" aria-label="Periodo anterior">‹</button>'+
+ '<b>'+reportDate(r.start,{year:'numeric'})+' — '+reportDate(r.end,{year:'numeric'})+'</b>'+
+ '<button data-action="report-next" aria-label="Periodo siguiente">›</button></div>'+
+ '<div class="row"><span class="fine">'+(unfinished?'Periodo en curso · cifras parciales':'Periodo completo o futuro')+'</span>'+
+ '<button data-action="report-refresh">Actualizar</button></div></div>'+
+ '<div class="report-kpis">'+
+ '<div class="report-kpi"><small>Ingresos por ventas</small><b>'+money(cur.total)+'</b></div>'+
+ '<div class="report-kpi"><small>Pedidos registrados</small><b>'+Number(cur.orders||0).toLocaleString('es-MX')+'</b></div>'+
+ '<div class="report-kpi"><small>Importe medio por pedido</small><b>'+money(cur.average_ticket)+'</b></div>'+
+ '<div class="report-kpi"><small>Descuentos concedidos</small><b>'+money(cur.discounts)+'</b></div></div>'+
+ '<div class="panel"><div class="section-head"><div><span class="eyebrow">COMPARACIÓN</span><h2>'+reportChangeLabel(r.change_percent)+'</h2></div>'+
+ '<span class="mini-tag">'+(Number(r.change_percent)>0?'Mayor venta':Number(r.change_percent)<0?'Menor venta':'Sin variación')+'</span></div>'+
+ '<p>Periodo actual: '+money(cur.total)+' · Periodo anterior: '+money(prev.total)+'.</p>'+
+ '<p class="fine">'+compared+'. '+(unfinished?'Este periodo todavía no termina; se compara lo acumulado hasta ahora con el periodo anterior completo.':'Se comparan periodos de igual duración.')+
+ (r.change_percent===null?' Si el periodo anterior no tuvo ventas, no se calcula porcentaje.':'')+'</p></div>'+
+ '<div class="panel"><div class="section-head"><h2>Ventas por día</h2><span class="mini-tag">Toca una barra</span></div>'+
+ '<div class="report-scroll"><div class="report-chart '+(week?'weekly':'monthly')+'">'+
+ days.map(d=>{
+  const value=Number(d.total)||0,selected=d.date===S.reportSelectedDay;
+  const height=value?Math.max(7,Math.round(value/maxAmount*100)):2;
+  return '<button type="button" class="report-bar '+(selected?'selected':'')+'" data-action="report-day" data-date="'+esc(d.date)+'" '+
+   'title="'+esc(reportDate(d.date,{weekday:'long'})+' · '+money(d.total))+'" aria-label="'+esc('Consultar '+d.date+': '+money(d.total))+'">'+
+   '<span class="report-bar-amount">'+(value?money(value):'')+'</span>'+
+   '<span class="report-bar-column" style="height:'+height+'%"></span>'+
+   '<small>'+reportDate(d.date,{day:'numeric'})+'</small></button>';
+ }).join('')+'</div></div>'+
+ (picked?'<div class="report-picked"><b>'+reportDate(picked.date,{weekday:'long',year:'numeric'})+'</b>'+
+ '<span>'+money(picked.total)+' · '+picked.orders+' pedidos</span>'+
+ '<button data-action="report-open-calendar" data-date="'+esc(picked.date)+'">Detalle del día</button></div>':'')+
+ '</div>'+
+ '<div class="panel"><h2>Medios de pago</h2>'+
+ [['Efectivo',cur.cash],['Transferencia',cur.transfer],['Tarjeta',cur.card]].map(a=>'<div class="report-payment"><span>'+a[0]+'</span><strong>'+money(a[1])+'</strong></div>').join('')+'</div>'+
+ '<div class="panel"><div class="section-head"><h2>Productos más vendidos</h2><span class="mini-tag">'+(r.products||[]).length+' productos</span></div>'+
+ (r.products?.length?r.products.map((p,index)=>'<div class="report-product"><div class="row"><b>'+(index+1)+'. '+esc(p.name)+'</b>'+
+ '<strong>'+Number(p.units)+' unidades</strong></div>'+
+ '<div class="report-progress"><span style="width:'+(100*Number(p.units)/bestUnits).toFixed(1)+'%"></span></div>'+
+ '<small>'+Number(p.orders)+' pedidos · ingresos '+money(p.revenue)+
+ (Number(p.discount)>0?' · descuentos '+money(p.discount):'')+'</small></div>').join(''):
+ '<div class="empty">Aún no hay ventas en este periodo.</div>')+'</div>'+
+ '<div class="panel"><div class="section-head"><h2>Promociones aplicadas</h2><span class="mini-tag">'+Number(cur.offer_bundles||0)+' paquetes</span></div>'+
+ '<p>Unidades vendidas en ofertas: <b>'+Number(cur.offer_units||0)+'</b>. Descuentos totales del periodo: <b>'+money(cur.discounts)+'</b>.</p>'+
+ (r.promotions?.length?r.promotions.map(x=>'<div class="report-product"><div class="row"><b>'+esc(x.name)+' · '+x.bundle_qty+'×</b>'+
+ '<strong>'+money(x.revenue)+'</strong></div>'+
+ '<small>'+Number(x.bundles)+' paquetes · '+Number(x.units)+' unidades · precio de paquete '+money(x.bundle_price)+
+ ' · descuento '+money(x.discount)+'</small></div>').join(''):
+ '<div class="empty">No hubo ventas con promoción en este periodo.</div>')+'</div>'+
+ '<div class="panel"><h2>Rendimiento por empleado</h2>'+
+ (r.employees?.length?r.employees.map(e=>'<div class="report-staff"><div class="row"><b>'+esc(e.name)+'</b>'+
+ '<span class="mini-tag">'+(e.role==='admin'?'Administrador':'Empleado')+'</span></div>'+
+ '<div class="report-payment"><span>Ventas · '+Number(e.orders)+' pedidos</span><strong>'+money(e.revenue)+'</strong></div>'+
+ '<small>Efectivo '+money(e.cash)+' · Transferencia '+money(e.transfer)+' · Tarjeta '+money(e.card)+'</small>'+
+ '<small>Turnos iniciados '+Number(e.shifts_opened)+' · cerrados '+Number(e.shifts_closed)+' · abiertos '+Number(e.shifts_open)+'</small>'+
+ '<small>Diferencia acumulada de turnos cerrados '+money(e.cash_difference)+'</small></div>').join(''):
+ '<div class="empty">Nadie registró ventas ni abrió un turno en este periodo.</div>')+'</div>'+
+ '<div class="panel"><h2>Resumen de caja</h2>'+
+ '<div class="report-payment"><span>Turnos iniciados</span><strong>'+Number(r.shifts?.opened||0)+'</strong></div>'+
+ '<div class="report-payment"><span>Cerrados / abiertos</span><strong>'+closed+' / '+Number(r.shifts?.open||0)+'</strong></div>'+
+ '<div class="report-payment"><span>Diferencia acumulada al cierre</span><strong>'+money(r.shifts?.total_difference)+'</strong></div>'+
+ '<p class="fine">'+esc(r.shift_scope_note||'Los turnos se contabilizan en la fecha de apertura.')+
+ ' Los ingresos se contabilizan en la fecha en que se registró cada venta; no incluyen entradas de efectivo que no sean ventas.</p></div>';
+}
+
 function adminMore(){
  const menus=[
  ['ingredientes','Ingredientes y suministros','Altas, unidades y niveles mínimos.','inventory'],
@@ -541,6 +684,7 @@ function adminMore(){
  ['precios','Precios','Edición e historial de precios.','cash'],
  ['promociones','Ofertas 2× y 3×','Paquetes y descuentos automáticos.','cart'],
  ['historial','Calendario de ventas','Historial por día, empleado y turno.','receipt'],
+ ['reportes','Reportes y estadísticas','Semanal, mensual, promociones y personal.','receipt'],
  ['caja','Corte de caja','Abrir, revisar y cerrar turnos con arqueo.','cash'],
  ['cuenta','Cuenta y seguridad','Contraseña y recuperación de acceso.','team']];
  return '<div class="panel"><span class="eyebrow">CONFIGURACIÓN PRIVADA</span><h1 style="margin-top:6px">Más opciones</h1>'+
@@ -678,7 +822,7 @@ document.addEventListener('change',e=>{
  if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
 });
 
-function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}if(!S.staff.active){app.innerHTML='<div class="panel"><h1>Cuenta de empleado pendiente</h1><p>Tu correo está registrado, pero el administrador debe activar tu acceso. Mientras tanto puedes establecer tu contraseña; no tendrás acceso al inventario, ventas ni caja.</p><button data-action="check-activation">Comprobar activación</button><button data-action="logout">Salir</button></div>'+accountView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row"><button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="switch-account">Cambiar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='promociones'?promotionView():S.page==='historial'?historyView():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
+function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}if(!S.staff.active){app.innerHTML='<div class="panel"><h1>Cuenta de empleado pendiente</h1><p>Tu correo está registrado, pero el administrador debe activar tu acceso. Mientras tanto puedes establecer tu contraseña; no tendrás acceso al inventario, ventas ni caja.</p><button data-action="check-activation">Comprobar activación</button><button data-action="logout">Salir</button></div>'+accountView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row"><button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="switch-account">Cambiar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='promociones'?promotionView():S.page==='historial'?historyView():S.page==='reportes'?reportView():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
 async function checkout(){let job=S.pending;if(!job){const items=Object.entries(S.cart).filter(([id,qty])=>qty>0).map(([product_id,qty])=>({product_id,qty}));if(!items.length)throw Error('Primero agrega productos');job={request:crypto.randomUUID(),items,payment:S.payment,user:S.staff.user_id};S.pending=job;sessionStorage.setItem('corderito_pending',JSON.stringify(job))}if(job.user!==S.staff.user_id)throw Error('Cobro pendiente de otra cuenta');const result=await api('/rest/v1/rpc/pos_checkout',{method:'POST',body:JSON.stringify({p_request:job.request,p_items:job.items,p_payment:job.payment})});S.pending=null;sessionStorage.removeItem('corderito_pending');S.cart={};await sync();note('Venta confirmada: '+money(result.total)+(result.duplicated?' (reintento seguro)':''));}
 async function click(e){const btn=e.target.closest('[data-action]');if(!btn)return;const action=btn.dataset.action;e.preventDefault();if(S.busy)return;S.error='';S.message='';const email=String($('email')?.value||'').trim(),password=$('password')?.value||'';try{S.busy=true;
  if(action==='login'){if(!email||!password)throw Error('Escribe correo y contraseña');saveRememberSetting($('remember-login')?.checked!==false);const auth=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});storeSession(auth);await setUser()}
@@ -697,7 +841,7 @@ else if(action==='logout'){await leaveAccount();S.message='Sesión cerrada en es
  else if(action==='select-account'){S.loginPrefill=btn.dataset.email||'';S.message='Escribe la contraseña de '+S.loginPrefill+'.';}
  else if(action==='forget-account'){forgetEmail(btn.dataset.email||'');S.message='Se quitó el correo recordado de este teléfono.';}
 
- else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page;if(S.page==='historial'&&!S.monthStats)await loadMonth();}
+ else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page;if(S.page==='historial'&&!S.monthStats)await loadMonth();if(S.page==='reportes')await loadReport();}
  else if(action==='offer-save'){
   if(S.staff.role!=='admin')throw Error('Solo administrador');
   const id=btn.dataset.id,qty=Number(btn.dataset.qty),product=S.products.find(p=>p.id===id);
@@ -707,6 +851,36 @@ else if(action==='logout'){await leaveAccount();S.message='Sesión cerrada en es
   if(active&&!confirm('¿Activar la oferta de '+qty+' por '+money(price)+' para '+product.name+'? Se aplicará en las nuevas ventas.'))return;
   await api('/rest/v1/rpc/admin_upsert_promotion',{method:'POST',body:JSON.stringify({p_product:id,p_bundle:qty,p_price:price,p_active:active})});
   await sync();S.message='Oferta guardada'+(active?' y activada':' (inactiva)');
+ }
+ else if(action==='report-mode'){
+  if(S.staff?.role!=='admin')throw Error('Solo el administrador puede ver los reportes');
+  if(!['week','month'].includes(btn.dataset.mode))throw Error('Periodo inválido');
+  S.reportMode=btn.dataset.mode;S.reportSelectedDay=null;await loadReport();
+ }
+ else if(action==='report-prev'||action==='report-next'){
+  if(S.staff?.role!=='admin')throw Error('Solo el administrador puede ver los reportes');
+  const step=action==='report-next'?1:-1;
+  S.reportAnchor=S.reportMode==='week'
+   ?reportAddDays(reportRange().start,7*step)
+   :reportAddMonths(reportRange().start,step);
+  S.reportSelectedDay=null;await loadReport();
+ }
+ else if(action==='report-day'){
+  if(S.staff?.role!=='admin')throw Error('Solo el administrador puede ver los reportes');
+  const date=btn.dataset.date;
+  if(!S.reportData?.days?.some(d=>d.date===date))throw Error('El día no pertenece al reporte');
+  S.reportSelectedDay=date;
+ }
+ else if(action==='report-refresh'){
+  if(S.staff?.role!=='admin')throw Error('Solo el administrador puede ver los reportes');
+  await loadReport();
+ }
+ else if(action==='report-open-calendar'){
+  if(S.staff?.role!=='admin')throw Error('Solo el administrador puede ver los reportes');
+  const date=btn.dataset.date;
+  if(!S.reportData?.days?.some(d=>d.date===date))throw Error('Fecha inválida');
+  S.historyMonth=date.slice(0,7);S.historyDay=date;
+  await loadMonth();S.page='historial';
  }
  else if(action==='history-prev'||action==='history-next'){
   if(S.staff.role!=='admin')throw Error('Solo administrador');
