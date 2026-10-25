@@ -163,7 +163,7 @@ function resetAccount(){
  S.consumptionDraft=null;S.consumptionProduct=null;S.editIngredient=null;
  S.batches=[];S.batchPending=null;S.pending=null;S.cart={};S.payment='cash';
  S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;
- S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;S.reportData=null;S.reportAnchor=null;S.reportSelectedDay=null;light(false);
+ S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;S.reportData=null;S.reportAnchor=null;S.reportSelectedDay=null;S.reportMode='week';light(false);
 }
 async function leaveAccount(){
  if(S.pending||S.batchPending||S.pendingCashMovement)
@@ -624,7 +624,7 @@ function reportView(){
  '<div class="report-kpi"><small>Importe medio por pedido</small><b>'+money(cur.average_ticket)+'</b></div>'+
  '<div class="report-kpi"><small>Descuentos concedidos</small><b>'+money(cur.discounts)+'</b></div></div>'+
  '<div class="panel"><div class="section-head"><div><span class="eyebrow">COMPARACIÓN</span><h2>'+reportChangeLabel(r.change_percent)+'</h2></div>'+
- '<span class="mini-tag">'+(Number(r.change_percent)>0?'Mayor venta':Number(r.change_percent)<0?'Menor venta':'Sin variación')+'</span></div>'+
+ '<span class="mini-tag">'+(r.change_percent===null?'Sin base':Number(r.change_percent)>0?'Mayor venta':Number(r.change_percent)<0?'Menor venta':'Sin variación')+'</span></div>'+
  '<p>Periodo actual: '+money(cur.total)+' · Periodo anterior: '+money(prev.total)+'.</p>'+
  '<p class="fine">'+compared+'. '+(unfinished?'Este periodo todavía no termina; se compara lo acumulado hasta ahora con el periodo anterior completo.':'Se comparan periodos de igual duración.')+
  (r.change_percent===null?' Si el periodo anterior no tuvo ventas, no se calcula porcentaje.':'')+'</p></div>'+
