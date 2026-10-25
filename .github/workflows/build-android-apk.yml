@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'android/**'
+      - 'tools/generate_android_icons.py'
       - '.github/workflows/build-android-apk.yml'
 
 permissions:
@@ -25,34 +26,85 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
       - name: Install Android platform and build tools
         run: |
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           SDKMGR="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort | tail -1)"
           test -n "$SDKMGR"
-          echo "Using Android SDK manager: $SDKMGR"
           yes | "$SDKMGR" --licenses > /dev/null || true
           "$SDKMGR" --install "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Generate launcher icons from approved El Corderito mascot
+        run: |
+          python3 -m pip install "Pillow==11.3.0"
+          python3 tools/generate_android_icons.py
+          test -s android/app/src/main/res/drawable-nodpi/ic_launcher_fg.png
+          test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build signed debug APK
-        working-directory: android
-        run: gradle :app:assembleDebug --no-daemon --stacktrace --console=plain
-
-      - name: Inspect APK and SHA-256
+      - name: Choose stable release or temporary debug signature
+        env:
+          CORDERO_KEYSTORE_B64: ${{ secrets.CORDERO_KEYSTORE_B64 }}
+          CORDERO_STORE_PASSWORD: ${{ secrets.CORDERO_STORE_PASSWORD }}
+          CORDERO_KEY_ALIAS: ${{ secrets.CORDERO_KEY_ALIAS }}
+          CORDERO_KEY_PASSWORD: ${{ secrets.CORDERO_KEY_PASSWORD }}
+        shell: bash
         run: |
-          test -s android/app/build/outputs/apk/debug/app-debug.apk
-          sha256sum android/app/build/outputs/apk/debug/app-debug.apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk El_Corderito_v0.10-beta.apk
+          set -euo pipefail
+          if [[ -n "$CORDERO_KEYSTORE_B64" && -n "$CORDERO_STORE_PASSWORD" && -n "$CORDERO_KEY_ALIAS" && -n "$CORDERO_KEY_PASSWORD" ]]; then
+            KEY_PATH="$RUNNER_TEMP/el-corderito-upload.jks"
+            printf '%s' "$CORDERO_KEYSTORE_B64" | base64 --decode > "$KEY_PATH"
+            chmod 600 "$KEY_PATH"
+            test -s "$KEY_PATH"
+            echo "CORDERO_KEYSTORE_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+            echo "CORDERO_STORE_PASSWORD=$CORDERO_STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "CORDERO_KEY_ALIAS=$CORDERO_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "CORDERO_KEY_PASSWORD=$CORDERO_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "APK_VARIANT=release" >> "$GITHUB_ENV"
+            echo "Stable signing material detected; creating the release APK."
+          else
+            echo "APK_VARIANT=debug" >> "$GITHUB_ENV"
+            echo "::warning::Stable signing secrets not set. Creating a temporary debug APK; updates may require uninstall."
+          fi
+
+      - name: Build Android APK
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$APK_VARIANT" == "release" ]]; then
+            gradle :app:assembleRelease --no-daemon --stacktrace --console=plain
+          else
+            gradle :app:assembleDebug --no-daemon --stacktrace --console=plain
+          fi
+
+      - name: Validate APK and prepare download
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="android/app/build/outputs/apk/${APK_VARIANT}/app-${APK_VARIANT}.apk"
+          test -s "$SOURCE"
+          DEST="El_Corderito_v0.14-${APK_VARIANT}.apk"
+          cp "$SOURCE" "$DEST"
+          sha256sum "$DEST"
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          "$SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$DEST"
+          echo "SIGNED_APK_FILE=$DEST" >> "$GITHUB_ENV"
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: El_Corderito_v0.10-beta_Android
-          path: El_Corderito_v0.10-beta.apk
+          name: El_Corderito_v0.14-${{ env.APK_VARIANT }}_Android
+          path: ${{ env.SIGNED_APK_FILE }}
           if-no-files-found: error
           retention-days: 30
