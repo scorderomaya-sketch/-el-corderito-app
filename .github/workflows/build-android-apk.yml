@@ -41,7 +41,7 @@ jobs:
 
       - name: Generate launcher icons from approved El Corderito mascot
         run: |
-          python3 -m pip install "Pillow==11.3.0"
+          python3 -m pip install "Pillow==11.3.0" "CairoSVG==2.7.1"
           python3 tools/generate_android_icons.py
           test -s android/app/src/main/res/drawable-nodpi/ic_launcher_fg.png
           test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
@@ -93,7 +93,7 @@ jobs:
           set -euo pipefail
           SOURCE="android/app/build/outputs/apk/${APK_VARIANT}/app-${APK_VARIANT}.apk"
           test -s "$SOURCE"
-          DEST="El_Corderito_v0.14-${APK_VARIANT}.apk"
+          DEST="El_Corderito_v0.14.1-${APK_VARIANT}.apk"
           cp "$SOURCE" "$DEST"
           sha256sum "$DEST"
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
@@ -103,7 +103,7 @@ jobs:
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: El_Corderito_v0.14-${{ env.APK_VARIANT }}_Android
+          name: El_Corderito_v0.14.1-${{ env.APK_VARIANT }}_Android
           path: ${{ env.SIGNED_APK_FILE }}
           if-no-files-found: error
           retention-days: 30
