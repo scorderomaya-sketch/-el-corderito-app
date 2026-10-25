@@ -99,7 +99,7 @@ footer{padding-bottom:85px}
 .report-product{padding:13px 0;border-bottom:1px solid #efeae5}.report-product b{font-size:12px}.report-product strong{font-size:12px}.report-product small{display:block;margin-top:8px;color:#77726f;font-size:11px}
 .report-progress{height:6px;background:#f3ece8;border-radius:999px;margin-top:8px;overflow:hidden}.report-progress span{display:block;background:#b3334f;height:100%;border-radius:999px}
 .report-staff{padding:14px 0;border-bottom:1px solid #efeae5}.report-staff .report-payment{border-bottom:0;padding:8px 0}.report-staff small{display:block;color:#77726f;font-size:11px;margin-top:6px}
-</style></head><body>
+.report-chart.monthly .report-bar-amount{font-size:0}</style></head><body>
 <header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
 <main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
@@ -626,7 +626,7 @@ function reportView(){
  '<div class="panel"><div class="section-head"><div><span class="eyebrow">COMPARACIÓN</span><h2>'+reportChangeLabel(r.change_percent)+'</h2></div>'+
  '<span class="mini-tag">'+(r.change_percent===null?'Sin base':Number(r.change_percent)>0?'Mayor venta':Number(r.change_percent)<0?'Menor venta':'Sin variación')+'</span></div>'+
  '<p>Periodo actual: '+money(cur.total)+' · Periodo anterior: '+money(prev.total)+'.</p>'+
- '<p class="fine">'+compared+'. '+(unfinished?'Este periodo todavía no termina; se compara lo acumulado hasta ahora con el periodo anterior completo.':'Se comparan periodos de igual duración.')+
+ '<p class="fine">'+compared+'. '+(unfinished?'Este periodo todavía no termina; se compara lo acumulado hasta ahora con el periodo anterior completo.':(week?'Se comparan semanas completas de siete días.':'Se compara con el mes calendario anterior.'))+
  (r.change_percent===null?' Si el periodo anterior no tuvo ventas, no se calcula porcentaje.':'')+'</p></div>'+
  '<div class="panel"><div class="section-head"><h2>Ventas por día</h2><span class="mini-tag">Toca una barra</span></div>'+
  '<div class="report-scroll"><div class="report-chart '+(week?'weekly':'monthly')+'">'+
