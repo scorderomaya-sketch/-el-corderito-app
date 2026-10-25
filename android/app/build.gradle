@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
 }
 
+def signingStorePath = System.getenv('CORDERO_KEYSTORE_PATH')
+
 android {
     namespace 'mx.elcorderito.mobile'
     compileSdk 35
@@ -10,8 +12,21 @@ android {
         applicationId 'mx.elcorderito.mobile'
         minSdk 26
         targetSdk 35
-        versionCode 10
-        versionName '0.10.0-beta'
+        versionCode 14
+        versionName '0.14.0-beta'
+    }
+
+    signingConfigs {
+        stable {
+            // All signing material is injected through GitHub Actions secrets.
+            // Never commit keystores, passwords, or private keys to this repository.
+            if (signingStorePath) {
+                storeFile file(signingStorePath)
+                storePassword System.getenv('CORDERO_STORE_PASSWORD')
+                keyAlias System.getenv('CORDERO_KEY_ALIAS')
+                keyPassword System.getenv('CORDERO_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
@@ -21,6 +36,8 @@ android {
         }
         release {
             minifyEnabled false
+            debuggable false
+            signingConfig signingConfigs.stable
         }
     }
 
