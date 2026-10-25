@@ -99,14 +99,14 @@ footer{padding-bottom:85px}
 .report-product{padding:13px 0;border-bottom:1px solid #efeae5}.report-product b{font-size:12px}.report-product strong{font-size:12px}.report-product small{display:block;margin-top:8px;color:#77726f;font-size:11px}
 .report-progress{height:6px;background:#f3ece8;border-radius:999px;margin-top:8px;overflow:hidden}.report-progress span{display:block;background:#b3334f;height:100%;border-radius:999px}
 .report-staff{padding:14px 0;border-bottom:1px solid #efeae5}.report-staff .report-payment{border-bottom:0;padding:8px 0}.report-staff small{display:block;color:#77726f;font-size:11px;margin-top:6px}
-.report-chart.monthly .report-bar-amount{font-size:0}</style></head><body>
+.report-chart.monthly .report-bar-amount{font-size:0}.owner-banner .row button[title="Volver"]{border-color:#e9d4ce;background:#fff9f4;font-weight:650}</style></head><body>
 <header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13.1 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,reportMode:'week',reportAnchor:null,reportData:null,reportSelectedDay:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,reportMode:'week',reportAnchor:null,reportData:null,reportSelectedDay:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',navDepth:0,loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -163,7 +163,7 @@ function resetAccount(){
  S.consumptionDraft=null;S.consumptionProduct=null;S.editIngredient=null;
  S.batches=[];S.batchPending=null;S.pending=null;S.cart={};S.payment='cash';
  S.daily=null;S.team=[];S.shifts=[];S.cashMovements=[];S.openShift=null;S.shiftSummary=null;
- S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;S.reportData=null;S.reportAnchor=null;S.reportSelectedDay=null;S.reportMode='week';light(false);
+ S.pendingCashMovement=null;S.lastSyncAt=null;S.page='inicio';S.recovery=false;S.promotions=[];S.promotionHistory=[];S.monthStats=null;S.dayDetails=null;S.historyMonth=null;S.historyDay=null;S.reportData=null;S.reportAnchor=null;S.reportSelectedDay=null;S.reportMode='week';S.navDepth=0;light(false);
 }
 async function leaveAccount(){
  if(S.pending||S.batchPending||S.pendingCashMovement)
@@ -276,6 +276,48 @@ function ico(name){
  };
  return '<svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(parts[name]||parts.more)+'</svg>';
 }
+
+const APP_NAV='el-corderito-navigation-v1';
+function runningInAndroidApp(){return typeof navigator!=='undefined'&&/ElCorderitoAndroid\//i.test(navigator.userAgent||'');}
+function allowedPage(page){
+ const admin=['inicio','ventas','inventario','equipo','mas','ingredientes','recetas','lotes','consumo','precios','promociones','historial','reportes','caja','cuenta'];
+ const employee=['ventas','inventario','caja','cuenta'];
+ return !!S.staff?.active&&(S.staff.role==='admin'?admin:employee).includes(page);
+}
+function appHistoryState(page,depth=0,root=false){return {app:APP_NAV,user:S.staff?.user_id||null,page,depth,root};}
+function resetTabHistory(){
+ S.navDepth=0;
+ if(!S.staff?.active)return;
+ history.replaceState(appHistoryState(S.page,0,runningInAndroidApp()),'',location.pathname);
+ if(runningInAndroidApp())history.pushState(appHistoryState(S.page,0,false),'',location.pathname);
+}
+function goTab(page){
+ if(!allowedPage(page))throw Error('Esta pantalla no está autorizada para tu cuenta.');
+ if(page===S.page)return;
+ S.page=page;S.navDepth=Math.min(1000,S.navDepth+1);
+ history.pushState(appHistoryState(page,S.navDepth,false),'',location.pathname);
+}
+window.addEventListener('popstate',async event=>{
+ const entry=event.state;
+ if(!S.staff?.active){S.navDepth=0;S.error='';S.message='';render();return;}
+ if(entry?.app!==APP_NAV||entry.user!==S.staff.user_id||!allowedPage(entry.page)){
+  history.pushState(appHistoryState(S.page,S.navDepth,false),'',location.pathname);
+  S.message='Esta pantalla pertenece a otra sesión. Continúas en tu cuenta actual.';render();return;
+ }
+ if(entry.root&&runningInAndroidApp()){
+  history.pushState(appHistoryState(S.page,0,false),'',location.pathname);
+  S.navDepth=0;S.message='Ya estás en la primera pantalla. Para salir puedes usar Inicio de Android.';
+  S.error='';render();return;
+ }
+ S.page=entry.page;S.navDepth=Number.isInteger(entry.depth)?Math.max(0,entry.depth):0;
+ S.error='';S.message='';render();
+ try{
+  if(S.page==='historial'&&!S.monthStats)await loadMonth();
+  if(S.page==='reportes'&&!S.reportData)await loadReport();
+  render();
+ }catch(err){S.error='No se pudo actualizar esta pestaña: '+(err.message||String(err));render();}
+});
+
 function nav(){
  const admin=S.staff?.role==='admin';
  const tabs=admin?[['inicio','Inicio','home'],['ventas','Ventas','cart'],['inventario','Inventario','inventory'],['equipo','Empleados','team'],['mas','Más','more']]
@@ -822,26 +864,27 @@ document.addEventListener('change',e=>{
  if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
 });
 
-function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}if(!S.staff.active){app.innerHTML='<div class="panel"><h1>Cuenta de empleado pendiente</h1><p>Tu correo está registrado, pero el administrador debe activar tu acceso. Mientras tanto puedes establecer tu contraseña; no tendrás acceso al inventario, ventas ni caja.</p><button data-action="check-activation">Comprobar activación</button><button data-action="logout">Salir</button></div>'+accountView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row"><button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="switch-account">Cambiar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='promociones'?promotionView():S.page==='historial'?historyView():S.page==='reportes'?reportView():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
+function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}if(!S.staff.active){app.innerHTML='<div class="panel"><h1>Cuenta de empleado pendiente</h1><p>Tu correo está registrado, pero el administrador debe activar tu acceso. Mientras tanto puedes establecer tu contraseña; no tendrás acceso al inventario, ventas ni caja.</p><button data-action="check-activation">Comprobar activación</button><button data-action="logout">Salir</button></div>'+accountView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row">'+(S.navDepth>0?'<button data-action="back" title="Volver" aria-label="Regresar a la pestaña anterior">‹ Volver</button>':'')+'<button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="switch-account">Cambiar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='promociones'?promotionView():S.page==='historial'?historyView():S.page==='reportes'?reportView():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
 async function checkout(){let job=S.pending;if(!job){const items=Object.entries(S.cart).filter(([id,qty])=>qty>0).map(([product_id,qty])=>({product_id,qty}));if(!items.length)throw Error('Primero agrega productos');job={request:crypto.randomUUID(),items,payment:S.payment,user:S.staff.user_id};S.pending=job;sessionStorage.setItem('corderito_pending',JSON.stringify(job))}if(job.user!==S.staff.user_id)throw Error('Cobro pendiente de otra cuenta');const result=await api('/rest/v1/rpc/pos_checkout',{method:'POST',body:JSON.stringify({p_request:job.request,p_items:job.items,p_payment:job.payment})});S.pending=null;sessionStorage.removeItem('corderito_pending');S.cart={};await sync();note('Venta confirmada: '+money(result.total)+(result.duplicated?' (reintento seguro)':''));}
 async function click(e){const btn=e.target.closest('[data-action]');if(!btn)return;const action=btn.dataset.action;e.preventDefault();if(S.busy)return;S.error='';S.message='';const email=String($('email')?.value||'').trim(),password=$('password')?.value||'';try{S.busy=true;
- if(action==='login'){if(!email||!password)throw Error('Escribe correo y contraseña');saveRememberSetting($('remember-login')?.checked!==false);const auth=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});storeSession(auth);await setUser()}
+ if(action==='login'){if(!email||!password)throw Error('Escribe correo y contraseña');saveRememberSetting($('remember-login')?.checked!==false);const auth=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});storeSession(auth);await setUser();resetTabHistory()}
  else if(action==='magic'){if(!email)throw Error('Escribe primero tu correo');await api('/auth/v1/otp?redirect_to='+enc(location.origin+location.pathname),{method:'POST',body:JSON.stringify({email,create_user:false})});note('Se solicitó el enlace. Si regresa a una dirección anterior, configura el nuevo enlace de GitHub Pages como Redirect URL en Supabase.');return}
- else if(action==='verify'){const token=$('otp')?.value||'';if(!email||!token)throw Error('Escribe el correo y el código');saveRememberSetting($('remember-login')?.checked!==false);const auth=await api('/auth/v1/verify',{method:'POST',body:JSON.stringify({email,token,type:'email'})});storeSession(auth);await setUser()}
+ else if(action==='verify'){const token=$('otp')?.value||'';if(!email||!token)throw Error('Escribe el correo y el código');saveRememberSetting($('remember-login')?.checked!==false);const auth=await api('/auth/v1/verify',{method:'POST',body:JSON.stringify({email,token,type:'email'})});storeSession(auth);await setUser();resetTabHistory()}
  else if(action==='save-password'){const pw=$('newpass')?.value||'',confirm=$('newpass2')?.value||'';if(pw.length<12||pw.length>128)throw Error('Usa una contraseña de 12 a 128 caracteres');if(pw!==confirm)throw Error('Las contraseñas no coinciden');if(!S.session?.access_token)throw Error('Vuelve a iniciar sesión antes de guardar la contraseña');await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})});S.recovery=false;S.message='Contraseña guardada correctamente. En el siguiente inicio podrás usar tu correo y contraseña.';}
  else if(action==='recover'){if(!email)throw Error('Escribe primero tu correo electrónico');await api('/auth/v1/recover?redirect_to='+enc(location.origin+location.pathname),{method:'POST',body:JSON.stringify({email})});S.message='Si el correo tiene una cuenta, recibirás un enlace para restablecer la contraseña.';return}
  
-else if(action==='logout'){await leaveAccount();S.message='Sesión cerrada en este dispositivo.';}
- else if(action==='switch-account'){await leaveAccount();S.loginPrefill='';S.message='Selecciona el otro correo e introduce su contraseña.';}
+else if(action==='logout'){await leaveAccount();history.replaceState({app:APP_NAV,page:'login',user:null,depth:0},'',location.pathname);S.message='Sesión cerrada en este dispositivo.';}
+ else if(action==='switch-account'){await leaveAccount();S.loginPrefill='';history.replaceState({app:APP_NAV,page:'login',user:null,depth:0},'',location.pathname);S.message='Selecciona el otro correo e introduce su contraseña.';}
  else if(action==='forget-device'){
   if(!confirm('¿Quitar el acceso de esta cuenta solo de este dispositivo? No se borran datos de Supabase.'))return;
-  const old=S.userEmail;await leaveAccount();forgetEmail(old);
+  const old=S.userEmail;await leaveAccount();history.replaceState({app:APP_NAV,page:'login',user:null,depth:0},'',location.pathname);forgetEmail(old);
   S.message='Se eliminó el acceso guardado de este dispositivo.';
  }
  else if(action==='select-account'){S.loginPrefill=btn.dataset.email||'';S.message='Escribe la contraseña de '+S.loginPrefill+'.';}
  else if(action==='forget-account'){forgetEmail(btn.dataset.email||'');S.message='Se quitó el correo recordado de este teléfono.';}
 
- else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');S.page=btn.dataset.page;if(S.page==='historial'&&!S.monthStats)await loadMonth();if(S.page==='reportes')await loadReport();}
+ else if(action==='back'){if(S.navDepth>0)history.back();return;}
+ else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');const destination=btn.dataset.page;if(destination==='historial'&&!S.monthStats)await loadMonth();if(destination==='reportes')await loadReport();goTab(destination);}
  else if(action==='offer-save'){
   if(S.staff.role!=='admin')throw Error('Solo administrador');
   const id=btn.dataset.id,qty=Number(btn.dataset.qty),product=S.products.find(p=>p.id===id);
@@ -880,7 +923,7 @@ else if(action==='logout'){await leaveAccount();S.message='Sesión cerrada en es
   const date=btn.dataset.date;
   if(!S.reportData?.days?.some(d=>d.date===date))throw Error('Fecha inválida');
   S.historyMonth=date.slice(0,7);S.historyDay=date;
-  await loadMonth();S.page='historial';
+  await loadMonth();goTab('historial');
  }
  else if(action==='history-prev'||action==='history-next'){
   if(S.staff.role!=='admin')throw Error('Solo administrador');
@@ -929,7 +972,7 @@ else if(action==='logout'){await leaveAccount();S.message='Sesión cerrada en es
    const cash=Number($('shift-opening')?.value);
    if(!Number.isFinite(cash)||cash<0||cash>1000000||Math.round(cash*100)!==cash*100)throw Error('El fondo inicial debe tener máximo dos decimales');
    await api('/rest/v1/rpc/open_cash_shift',{method:'POST',body:JSON.stringify({p_opening:cash})});
-   await sync();S.page='caja';S.message='Turno abierto correctamente';
+   await sync();goTab('caja');S.message='Turno abierto correctamente';
  }
  
 else if(action==='cash-move'||action==='cash-retry'){
@@ -1075,6 +1118,7 @@ document.addEventListener('click',click);
    if(err.authExpired){resetAccount();S.error='La sesión ha caducado; vuelve a entrar.';}
   }
  }
+ resetTabHistory();
  render();
  setInterval(async()=>{
   if(S.staff&&!S.busy){
