@@ -26,6 +26,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -87,7 +88,7 @@ public final class MainActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setSafeBrowsingEnabled(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " ElCorderitoAndroid/0.10.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " ElCorderitoAndroid/0.14.0");
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, false);
         WebView.setWebContentsDebuggingEnabled(false);
@@ -170,12 +171,11 @@ public final class MainActivity extends Activity {
         box.setPadding(dp(24), dp(32), dp(24), dp(32));
         box.setBackgroundColor(COLOR_CREAM);
 
-        TextView logo = new TextView(this);
-        logo.setText("🐑");
-        logo.setTextSize(52);
-        logo.setGravity(Gravity.CENTER);
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.mipmap.ic_launcher);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         box.addView(logo, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(104)));
 
         TextView title = new TextView(this);
         title.setText(R.string.offline_title);
@@ -238,12 +238,15 @@ public final class MainActivity extends Activity {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) {
+            // JavaScript tabs use pushState(), so WebView history restores the prior tab.
             webView.goBack();
         } else {
-            super.onBackPressed();
+            // Keep the task alive and preserve local WebView storage and the login session.
+            moveTaskToBack(true);
         }
     }
 
