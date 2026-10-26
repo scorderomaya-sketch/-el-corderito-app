@@ -101,7 +101,7 @@ footer{padding-bottom:85px}
 .report-staff{padding:14px 0;border-bottom:1px solid #efeae5}.report-staff .report-payment{border-bottom:0;padding:8px 0}.report-staff small{display:block;color:#77726f;font-size:11px;margin-top:6px}
 .report-chart.monthly .report-bar-amount{font-size:0}.owner-banner .row button[title="Volver"]{border-color:#e9d4ce;background:#fff9f4;font-weight:650}</style></head><body>
 <header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13.1 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13.2 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
@@ -141,13 +141,33 @@ function loadSession(){
   }
  }catch(e){S.session=null;}
 }
+function jwtExpiry(accessToken){
+ try{
+  const part=String(accessToken||'').split('.')[1];
+  if(!part)return null;
+  const claims=JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/')));
+  const exp=Number(claims.exp);
+  return Number.isFinite(exp)&&exp>0?exp:null;
+ }catch(e){return null;}
+}
+function sessionExpiry(s){
+ return Number(s?.expires_at)>0?Number(s.expires_at):jwtExpiry(s?.access_token);
+}
 function storeSession(s){
- S.session=s||null;
  if(s){
   if(!s.access_token||!s.refresh_token)throw Error('La sesión no contiene credenciales completas');
-  if(S.remember){localStorage.setItem(SESSION_KEY,JSON.stringify(s));sessionStorage.removeItem(SESSION_KEY);}
-  else{sessionStorage.setItem(SESSION_KEY,JSON.stringify(s));localStorage.removeItem(SESSION_KEY);}
- }else{localStorage.removeItem(SESSION_KEY);sessionStorage.removeItem(SESSION_KEY);}
+  const normalized={...s};
+  const fromJwt=jwtExpiry(s.access_token);
+  // Prefer JWT exp over expires_in; do not reset the clock when restoring storage.
+  if(fromJwt)normalized.expires_at=fromJwt;
+  else if(!Number(normalized.expires_at)&&Number(normalized.expires_in)>0)
+   normalized.expires_at=Math.floor(Date.now()/1000)+Number(normalized.expires_in);
+  S.session=normalized;
+  if(S.remember){localStorage.setItem(SESSION_KEY,JSON.stringify(normalized));sessionStorage.removeItem(SESSION_KEY);}
+  else{sessionStorage.setItem(SESSION_KEY,JSON.stringify(normalized));localStorage.removeItem(SESSION_KEY);}
+ }else{
+  S.session=null;localStorage.removeItem(SESSION_KEY);sessionStorage.removeItem(SESSION_KEY);
+ }
 }
 function saveRememberSetting(value){
  S.remember=!!value;
@@ -175,36 +195,62 @@ async function leaveAccount(){
   // Local session cleared even when offline. This does not guarantee remote revocation.
  }finally{resetAccount();}
 }
+
+function publicAuthEndpoint(path){
+ return /^\/auth\/v1\/(?:token|otp|verify|recover)(?:[/?]|$)/.test(path);
+}
+function jwtRejected(status,data){
+ if(status!==401&&status!==403)return false;
+ const desc=String(data?.message||data?.msg||data?.error_description||data?.error||'');
+ return status===401||/(?:invalid jwt|jwt expired|token is expired|token has expired|expired jwt|token expired)/i.test(desc);
+}
+async function ensureFreshSession(){
+ if(!S.session?.refresh_token)return;
+ const expiry=sessionExpiry(S.session);
+ // Proactively refresh shortly before expiration, including on a cold APK launch.
+ if(expiry&&expiry*1000<=Date.now()+90000)await refreshToken();
+}
 async function api(path,init={},retry=true){
+ const unauthenticated=publicAuthEndpoint(path);
+ if(!unauthenticated&&retry&&S.session?.refresh_token)await ensureFreshSession();
  const headers={'apikey':KEY,'Content-Type':'application/json',...init.headers};
- if(S.session?.access_token)headers.Authorization='Bearer '+S.session.access_token;
+ // An old JWT must never be attached to password login or OTP endpoints.
+ if(!unauthenticated&&S.session?.access_token)headers.Authorization='Bearer '+S.session.access_token;
  let res;try{res=await fetch(PROJECT+path,{...init,headers,cache:'no-store'});}
  catch(e){light(false);throw Error('No se puede conectar al servidor');}
- if(res.status===401&&retry&&S.session?.refresh_token&&!path.includes('/auth/v1/token')){
-  await refreshToken();return api(path,init,false);
- }
  const raw=await res.text();let data;try{data=raw?JSON.parse(raw):null}catch(e){data=raw}
+ const staleJwt=!unauthenticated&&jwtRejected(res.status,data);
+ if(staleJwt&&retry&&S.session?.refresh_token){
+  await refreshToken();
+  return api(path,init,false);
+ }
  if(!res.ok){
   light(false);
   const error=new Error(data?.msg||data?.message||data?.error_description||data?.error||'Error HTTP '+res.status);
-  if(res.status===401)error.authExpired=true;
+  if(staleJwt)error.authExpired=true;
   throw error;
  }
  return data;
 }
 async function refreshToken(){
  if(refreshInFlight)return refreshInFlight;
- if(!S.session?.refresh_token)throw Error('No existe una sesión renovable');
+ if(!S.session?.refresh_token){
+  const err=new Error('Tu sesión terminó. Inicia sesión nuevamente.');
+  err.authExpired=true;
+  throw err;
+ }
  const current=S.session.refresh_token;
  refreshInFlight=(async()=>{
   let r;try{
    r=await fetch(PROJECT+'/auth/v1/token?grant_type=refresh_token',{
     method:'POST',cache:'no-store',headers:{'apikey':KEY,'Content-Type':'application/json'},
     body:JSON.stringify({refresh_token:current})});
-  }catch(e){throw Error('Sin conexión para renovar la sesión');}
+  }catch(e){throw Error('Sin conexión para renovar la sesión. Revisa tu conexión a Internet.');}
   const payload=await r.json().catch(()=>null);
   if(!r.ok||!payload?.access_token||!payload?.refresh_token){
-   const err=new Error('Tu sesión caducó. Entra nuevamente con tu contraseña.');
+   const err=new Error([400,401,403].includes(r.status)
+    ?'Tu sesión ya no puede renovarse. Inicia sesión nuevamente.'
+    :'No se pudo renovar tu sesión por un error del servidor. Vuelve a intentarlo.');
    if([400,401,403].includes(r.status))err.authExpired=true;
    throw err;
   }
@@ -212,6 +258,14 @@ async function refreshToken(){
  })();
  try{return await refreshInFlight}finally{refreshInFlight=null}
 }
+function showReauthentication(){
+ const email=S.userEmail||S.loginPrefill||S.recentAccounts[0]||'';
+ resetAccount();
+ S.loginPrefill=email;
+ S.error='Tu sesión anterior terminó. Ingresa tu contraseña para continuar.';
+ history.replaceState({app:APP_NAV,page:'login',user:null,depth:0},'',location.pathname);
+}
+
 async function setUser(){if(!S.session?.access_token)return;const u=await api('/auth/v1/user');const rows=await api('/rest/v1/staff?select=user_id,role,display_name,active&user_id=eq.'+enc(u.id));if(!Array.isArray(rows)||!rows.length)throw Error('No se encontró el registro de esta cuenta.');S.staff=rows[0];S.userEmail=u.email||'';rememberEmail(S.userEmail);if(!S.staff.active){S.page='cuenta';S.products=[];S.ingredients=[];S.sales=[];S.shifts=[];S.openShift=null;S.daily=null;S.team=[];}else{S.page=S.staff.role==='admin'?'inicio':'ventas';await sync();}}
 
 async function sync(){
@@ -1113,19 +1167,27 @@ document.addEventListener('click',click);
   try{
    await setUser();
    if(S.recovery){S.page='cuenta';S.message='Establece una contraseña nueva para recuperar el acceso.';}
-  }catch(err){
-   S.error=err.message||String(err);
-   if(err.authExpired){resetAccount();S.error='La sesión ha caducado; vuelve a entrar.';}
+   }catch(err){
+   if(err.authExpired)showReauthentication();
+   else S.error=err.message||String(err);
   }
  }
  resetTabHistory();
  render();
+ document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||!S.staff||S.busy)return;
+  try{await ensureFreshSession();}catch(err){
+   if(err.authExpired)showReauthentication();
+   else S.error='No se pudo renovar la sesión. Revisa la conexión.';
+   render();
+  }
+ });
  setInterval(async()=>{
   if(S.staff&&!S.busy){
-   try{await sync();
+   try{await ensureFreshSession();await sync();
     if(!S.recipeDraft&&S.consumptionDraft===null&&S.editIngredient===null&&
        !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))render();
-   }catch(e){S.error='Problema de sincronización: '+e.message;render();}
+   }catch(e){if(e.authExpired)showReauthentication();else S.error='Problema de sincronización: '+e.message;render();}
   }
  },12000);
 })();
