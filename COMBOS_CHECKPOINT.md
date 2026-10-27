@@ -22,11 +22,18 @@ Fecha: 2026-10-26. Rama: main. OBJETIVO: combos configurables por administrador,
 - [x] C0 auditar BD y web sin modificar datos reales.
 - [x] C1 función de cobro actualizada (migración `corderito_c1_checkout_nested_combo_components_and_snapshot`): precio independiente, ingredientes expandidos, snapshot y validación de recetas; conserva POS anterior.
 - [x] C2 prueba SQL transaccional revertida: 2 combos (2×$120) + producto normal ($99) = $339; ingredientes A 20→15, B 20→18; snapshot de dos componentes; reintento idempotente sin doble consumo; edición denegada a empleado.
-- [ ] C3 conectar editor exclusivo del administrador, catálogo del empleado y resumen de cobro.
-- [ ] C4 ejecutar tests de interfaz, comprobar despliegue de GitHub Pages.
-- [ ] C5 validar con teléfono: 1 combo ficticio sin activar de forma comercial.
+- [x] C3 editor de combos en `index.html`, guardado RPC solo admin, selección de componentes, precio libre, activación opcional, catálogo POS; no se activó ningún combo real. Se corrigió conservación de formularios y se impidió editar combos desde el módulo normal de precios.
+- [x] C4 pruebas de interfaz simulada (8 comprobaciones), venta desde empleado de 3 combos por $375, decremento A 20→17 y B 20→14, snapshot, bloqueo de combos anidados y promociones 2×/3× sobre combos, denegación de cambios desde empleado. Todas las ventas y productos de prueba fueron revertidos. Despliegue GitHub Pages `40436221575`: **success**.
+- [ ] C5 verificación manual en Android: abrir `Más → Creador de combos`, crear un combo **inactivo** y comprobar componentes; si se activa para prueba, comprobar cobro con ambos roles y contrastar inventario. Requiere acción del propietario.
 
 ## Incidencias
 - 2026-10-26: Error de transmisión al recuperar respuesta larga de Supabase. Mitigación aplicada: cuatro fragmentos SQL de 1600 caracteres cada uno.
 - 2026-10-26: Error del lector de respuestas SQL: coincidía con la primera etiqueta `<untrusted-data>` explicativa, no con el bloque real. Corregido recuperando la segunda etiqueta tras `\n\n`. Solo afectó lectura, no BD.
 - 2026-10-26: C1 y C2 completados; no se generaron combos permanentes ni se modificaron ventas en las pruebas.
+
+## Estado confirmado tras C4
+- Ventas almacenadas: 2 (sin modificación).
+- Combos creados: 0; combo_components: 0; productos temporales: 0.
+- Cobro normal y promoción 2×/3× de productos individuales conservados.
+- La nueva interfaz web quedó publicada en GitHub Pages. No requiere reinstalar APK WebView.
+- Cualquier fallo nuevo debe registrarse aquí con etapa, descripción, resultado esperado/actual, verificación y solución. Estado de C5 pendiente de prueba manual.
