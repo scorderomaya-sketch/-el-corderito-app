@@ -472,7 +472,9 @@ function menuEmoji(p){
  return n.includes('combo')?'🎁':n.includes('torta')?'🥪':n.includes('hamburgues')?'🍔':n.includes('puré')?'🥔':n.includes('papa')?'🍟':n.includes('agua')?'🥤':'🍽️';
 }
 function sale(){
- const items=S.products.filter(p=>p.active);
+ const items=S.products.filter(p=>p.active && (!S.combos.some(c=>c.product_id===p.id) ||
+  (S.comboParts.filter(c=>c.combo_id===p.id).length>=2 &&
+   S.comboParts.filter(c=>c.combo_id===p.id).every(c=>S.products.some(x=>x.id===c.product_id&&x.active)))));
  const categories=['Todos',...new Set(items.map(p=>p.category))];
  const displayed=S.selectedCategory==='Todos'?items:items.filter(p=>p.category===S.selectedCategory);
  const selected=items.filter(p=>Number(S.cart[p.id]||0)>0);
@@ -527,7 +529,7 @@ function inventory(){
  '<label>Motivo</label><input id="reason" maxlength="200" placeholder="Ej. Compra de teleras o merma">'+
  '<p></p><button class="primary checkout-btn" data-action="adjust" '+(S.ingredients.length?'':'disabled')+'>Guardar movimiento</button></div>':'');
 }
-function prices(){return '<div class="panel"><h1>Editar precios</h1><p>Solo administración. Cada cambio queda registrado y no modifica ventas antiguas.</p>'+S.products.map(p=>'<div class="item"><b>'+esc(p.name)+'</b><div class="row"><input id="price-'+p.id+'" type="number" step=".01" min="0.01" value="'+Number(p.price)+'" style="max-width:130px"><label style="margin:0"><input id="active-'+p.id+'" style="width:auto" type="checkbox" '+(p.active?'checked':'')+'> Activo</label><button data-action="price" data-id="'+p.id+'">Guardar</button></div></div>').join('')+'</div><div class="panel"><h2>Historial de precios</h2>'+S.priceHistory.map(h=>'<div class="item"><b>'+esc(S.products.find(p=>p.id===h.product_id)?.name||'Producto')+'</b><small>'+money(h.old_price)+' → '+money(h.new_price)+' · '+esc(new Date(h.changed_at).toLocaleString('es-MX'))+'</small></div>').join('')+'</div>'}
+function prices(){return '<div class="panel"><h1>Editar precios</h1><p>Solo administración. Cada cambio queda registrado y no modifica ventas antiguas. Los combos se modifican desde Creador de combos.</p>'+S.products.filter(p=>!S.combos.some(c=>c.product_id===p.id)).map(p=>'<div class="item"><b>'+esc(p.name)+'</b><div class="row"><input id="price-'+p.id+'" type="number" step=".01" min="0.01" value="'+Number(p.price)+'" style="max-width:130px"><label style="margin:0"><input id="active-'+p.id+'" style="width:auto" type="checkbox" '+(p.active?'checked':'')+'> Activo</label><button data-action="price" data-id="'+p.id+'">Guardar</button></div></div>').join('')+'</div><div class="panel"><h2>Historial de precios</h2>'+S.priceHistory.map(h=>'<div class="item"><b>'+esc(S.products.find(p=>p.id===h.product_id)?.name||'Producto')+'</b><small>'+money(h.old_price)+' → '+money(h.new_price)+' · '+esc(new Date(h.changed_at).toLocaleString('es-MX'))+'</small></div>').join('')+'</div>'}
 
 
 function teamView(){
@@ -1015,6 +1017,7 @@ else if(action==='logout'){await leaveAccount();history.replaceState({app:APP_NA
   if(S.staff?.role!=='admin'||!S.comboDraft)throw Error('Solo administrador');
   const d=S.comboDraft,name=String($('combo-name')?.value||'').trim(),
    price=Number($('combo-price')?.value),active=!!$('combo-active')?.checked;
+  d.name=name;d.price=$('combo-price')?.value||'';d.active=active;
   const possible=S.products.filter(p=>p.active&&!S.combos.some(c=>c.product_id===p.id));
   for(const product of possible){
    const input=document.querySelector('[data-combo-part="'+product.id+'"]');
