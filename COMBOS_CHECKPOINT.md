@@ -20,11 +20,13 @@ Fecha: 2026-10-26. Rama: main. OBJETIVO: combos configurables por administrador,
 
 ## Etapas
 - [x] C0 auditar BD y web sin modificar datos reales.
-- [ ] C1 asegurar función de cobro de combos; facturar paquete, descontar insumos de componentes; impedir promociones superpuestas y combos anidados.
-- [ ] C2 probar C1 con rollback total, repetición idempotente, inventario y permisos.
+- [x] C1 función de cobro actualizada (migración `corderito_c1_checkout_nested_combo_components_and_snapshot`): precio independiente, ingredientes expandidos, snapshot y validación de recetas; conserva POS anterior.
+- [x] C2 prueba SQL transaccional revertida: 2 combos (2×$120) + producto normal ($99) = $339; ingredientes A 20→15, B 20→18; snapshot de dos componentes; reintento idempotente sin doble consumo; edición denegada a empleado.
 - [ ] C3 conectar editor exclusivo del administrador, catálogo del empleado y resumen de cobro.
 - [ ] C4 ejecutar tests de interfaz, comprobar despliegue de GitHub Pages.
 - [ ] C5 validar con teléfono: 1 combo ficticio sin activar de forma comercial.
 
 ## Incidencias
-- 2026-10-26: Error de transmisión al recuperar respuesta larga de Supabase. Reproducción: consultar `pg_get_functiondef` entero; mitigación: fragmentar resultados, limitar salida y registrar hitos.
+- 2026-10-26: Error de transmisión al recuperar respuesta larga de Supabase. Mitigación aplicada: cuatro fragmentos SQL de 1600 caracteres cada uno.
+- 2026-10-26: Error del lector de respuestas SQL: coincidía con la primera etiqueta `<untrusted-data>` explicativa, no con el bloque real. Corregido recuperando la segunda etiqueta tras `\n\n`. Solo afectó lectura, no BD.
+- 2026-10-26: C1 y C2 completados; no se generaron combos permanentes ni se modificaron ventas en las pruebas.
