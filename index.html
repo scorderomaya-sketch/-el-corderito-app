@@ -99,14 +99,22 @@ footer{padding-bottom:85px}
 .report-product{padding:13px 0;border-bottom:1px solid #efeae5}.report-product b{font-size:12px}.report-product strong{font-size:12px}.report-product small{display:block;margin-top:8px;color:#77726f;font-size:11px}
 .report-progress{height:6px;background:#f3ece8;border-radius:999px;margin-top:8px;overflow:hidden}.report-progress span{display:block;background:#b3334f;height:100%;border-radius:999px}
 .report-staff{padding:14px 0;border-bottom:1px solid #efeae5}.report-staff .report-payment{border-bottom:0;padding:8px 0}.report-staff small{display:block;color:#77726f;font-size:11px;margin-top:6px}
-.report-chart.monthly .report-bar-amount{font-size:0}.owner-banner .row button[title="Volver"]{border-color:#e9d4ce;background:#fff9f4;font-weight:650}</style></head><body>
+.report-chart.monthly .report-bar-amount{font-size:0}.owner-banner .row button[title="Volver"]{border-color:#e9d4ce;background:#fff9f4;font-weight:650}
+.combo-component{border-bottom:1px solid #eee6df;padding:10px 0;gap:9px}.combo-component div{flex:1;min-width:0}
+.combo-component b{font-size:12px}.combo-component small{display:block;font-size:10px;color:#847b75}
+.combo-quantity{width:94px;flex:0 0 94px;margin:0}.combo-quantity span{font-size:10px}
+.combo-quantity input{width:100%;padding:8px 4px;margin:3px 0;font-size:14px;text-align:center}
+.combo-info{display:block;color:#78545c;font-size:10px;line-height:1.35}
+.combo-preview{padding:14px 0;border-top:1px solid #e9ded8}
+.combo-existing{padding:15px 0}.combo-existing small{font-size:11px;color:#847875}
+</style></head><body>
 <header><div class="brand"><span class="logo" role="img" aria-label="Cabeza de cordero, mascota de El Corderito"></span><div><div class="name">El Corderito</div><div class="sub">TORTAS · PARRILLA · BUEN SABOR</div></div></div><button id="light" class="dot" data-action="server" title="Ver estado del servidor" aria-label="Estado del servidor"></button></header>
-<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13.2 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
+<main><section id="alerts"></section><section id="app"></section></main><div id="bottom"></div><footer>Versión 0.13.3 beta · Hospedada en GitHub Pages · No usar para cobros reales.</footer>
 <script>
 'use strict';
 const PROJECT='https://xqdzpdbdvevqspshgxzk.supabase.co';
 const KEY='sb_publishable_HU3SjxJ2yeM8kQun1zFRIg_iQj7gxDi';
-const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,reportMode:'week',reportAnchor:null,reportData:null,reportSelectedDay:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',navDepth:0,loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
+const S={session:null,staff:null,products:[],ingredients:[],sales:[],promotions:[],combos:[],comboParts:[],comboDraft:null,promotionHistory:[],historyMonth:null,historyDay:null,monthStats:null,dayDetails:null,reportMode:'week',reportAnchor:null,reportData:null,reportSelectedDay:null,priceHistory:[],recipes:[],recipeParts:[],productParts:[],recipeDraft:null,consumptionDraft:null,consumptionProduct:null,editIngredient:null,batches:[],batchPending:null,cart:{},payment:'cash',selectedCategory:'Todos',daily:null,team:[],shifts:[],cashMovements:[],openShift:null,shiftSummary:null,pendingCashMovement:null,lastSyncAt:null,page:'inicio',userEmail:'',navDepth:0,loginPrefill:'',remember:true,recentAccounts:[],recovery:false,online:false,busy:false,error:'',message:'',pending:null};
 const $=id=>document.getElementById(id);
 const enc=encodeURIComponent;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -178,7 +186,7 @@ function resetAccount(){
  storeSession(null);
  for(const k of ['corderito_pending','corderito_batch_pending','corderito_cash_move_pending'])
   sessionStorage.removeItem(k);
- S.staff=null;S.userEmail='';S.products=[];S.ingredients=[];S.sales=[];S.priceHistory=[];
+ S.staff=null;S.userEmail='';S.products=[];S.ingredients=[];S.sales=[];S.combos=[];S.comboParts=[];S.comboDraft=null;S.priceHistory=[];
  S.recipes=[];S.recipeParts=[];S.productParts=[];S.recipeDraft=null;
  S.consumptionDraft=null;S.consumptionProduct=null;S.editIngredient=null;
  S.batches=[];S.batchPending=null;S.pending=null;S.cart={};S.payment='cash';
@@ -286,6 +294,8 @@ async function sync(){
  '/rest/v1/promotion_history?select=product_id,bundle_qty,old_price,new_price,old_active,new_active,changed_at&order=changed_at.desc&limit=30');
  paths.push(
  '/rest/v1/product_promotions?select=product_id,bundle_qty,bundle_price,active&order=bundle_qty.asc',
+ '/rest/v1/combos?select=product_id,updated_at',
+ '/rest/v1/combo_components?select=combo_id,product_id,quantity',
  '/rest/v1/cash_shifts?select=id,staff_id,opened_at,opening_cash,closed_at,closed_by,counted_cash,expected_cash,cash_sales,noncash_sales,cash_in,cash_out,difference,notes&order=opened_at.desc&limit=150',
  '/rest/v1/cash_movements?select=id,shift_id,actor_id,kind,amount,reason,created_at&order=created_at.desc&limit=100');
  const answers=await Promise.all(paths.map(path=>api(path)));
@@ -300,7 +310,9 @@ async function sync(){
    S.promotionHistory=answers[9]||[];
  }
  S.promotions=answers[admin?10:3]||[];
- const idx=admin?11:4;
+ S.combos=answers[admin?11:4]||[];
+ S.comboParts=answers[admin?12:5]||[];
+ const idx=admin?13:6;
  S.shifts=answers[idx]||[];
  S.cashMovements=answers[idx+1]||[];
  S.openShift=S.shifts.find(x=>x.staff_id===S.staff.user_id&&!x.closed_at)||null;
@@ -334,7 +346,7 @@ function ico(name){
 const APP_NAV='el-corderito-navigation-v1';
 function runningInAndroidApp(){return typeof navigator!=='undefined'&&/ElCorderitoAndroid\//i.test(navigator.userAgent||'');}
 function allowedPage(page){
- const admin=['inicio','ventas','inventario','equipo','mas','ingredientes','recetas','lotes','consumo','precios','promociones','historial','reportes','caja','cuenta'];
+ const admin=['inicio','ventas','inventario','equipo','mas','ingredientes','recetas','lotes','consumo','precios','promociones','combos','historial','reportes','caja','cuenta'];
  const employee=['ventas','inventario','caja','cuenta'];
  return !!S.staff?.active&&(S.staff.role==='admin'?admin:employee).includes(page);
 }
@@ -376,7 +388,7 @@ function nav(){
  const admin=S.staff?.role==='admin';
  const tabs=admin?[['inicio','Inicio','home'],['ventas','Ventas','cart'],['inventario','Inventario','inventory'],['equipo','Empleados','team'],['mas','Más','more']]
  :[['ventas','Cobrar','cart'],['inventario','Inventario','inventory'],['caja','Caja','cash'],['cuenta','Cuenta','team']];
- const current=admin&&['ingredientes','recetas','lotes','consumo','precios','promociones','historial','caja','cuenta'].includes(S.page)?'mas':S.page;
+ const current=admin&&['ingredientes','recetas','lotes','consumo','precios','promociones','combos','historial','caja','cuenta'].includes(S.page)?'mas':S.page;
  $('bottom').innerHTML='<nav class="nav">'+tabs.map(t=>
  '<button data-action="page" data-page="'+t[0]+'" class="'+(current===t[0]?'chosen':'')+'">'+ico(t[2])+'<span>'+t[1]+'</span></button>').join('')+'</nav>';
 }
@@ -390,7 +402,7 @@ function localDateKey(date=new Date()){
 function bestLinePrice(product,quantity){
  const q=Math.max(0,Math.floor(Number(quantity)||0)),unit=Number(product.price);
  if(!product.active||q===0)return {total:0,base:0,discount:0,bundles:[]};
- const promo=S.promotions.filter(p=>p.product_id===product.id&&p.active);
+ const promo=S.combos.some(c=>c.product_id===product.id)?[]:S.promotions.filter(p=>p.product_id===product.id&&p.active);
  const two=promo.find(p=>Number(p.bundle_qty)===2),three=promo.find(p=>Number(p.bundle_qty)===3);
  let best=unit*q,b2=0,b3=0;
  for(let n3=0;n3<=Math.floor(q/3);n3++){
@@ -457,7 +469,7 @@ function total(){return S.products.reduce((a,p)=>a+bestLinePrice(p,S.cart[p.id]|
 
 function menuEmoji(p){
  const n=(p.name+' '+p.category).toLowerCase();
- return n.includes('torta')?'🥪':n.includes('hamburgues')?'🍔':n.includes('puré')?'🥔':n.includes('papa')?'🍟':n.includes('agua')?'🥤':'🍽️';
+ return n.includes('combo')?'🎁':n.includes('torta')?'🥪':n.includes('hamburgues')?'🍔':n.includes('puré')?'🥔':n.includes('papa')?'🍟':n.includes('agua')?'🥤':'🍽️';
 }
 function sale(){
  const items=S.products.filter(p=>p.active);
@@ -471,6 +483,7 @@ function sale(){
  '<div class="catalogue">'+(displayed.length?displayed.map(p=>
  '<div class="product-card"><div class="glyph">'+menuEmoji(p)+'</div><small>'+esc(p.category)+'</small>'+
  '<b>'+esc(p.name)+'</b><div class="price">'+money(p.price)+'</div>'+
+ (S.combos.some(c=>c.product_id===p.id)?'<small class="combo-info">'+esc(comboLabel(p.id))+'</small>':'')+
  (S.promotions.filter(o=>o.product_id===p.id&&o.active).length?'<small class="promo-hint">'+S.promotions.filter(o=>o.product_id===p.id&&o.active).map(o=>o.bundle_qty+'× '+money(o.bundle_price)).join(' · ')+'</small>':'')+
  '<div class="qty"><button data-action="minus" data-id="'+p.id+'" aria-label="Quitar '+esc(p.name)+'">−</button>'+
  '<b>'+Number(S.cart[p.id]||0)+'</b><button data-action="plus" data-id="'+p.id+'" aria-label="Agregar '+esc(p.name)+'">+</button></div></div>').join(''):
@@ -594,6 +607,40 @@ function cashRow(name,value){return '<div class="row item"><span>'+name+'</span>
 function accountView(){return '<div class="panel"><h1>Mi cuenta</h1><p>Iniciaste sesión como <b>'+esc(S.userEmail||'Cuenta autorizada')+'</b>.</p><h2>Acceso y sesión</h2><label class="remember-row"><input id="remember-setting" type="checkbox" '+(S.remember?'checked':'')+'><span>Seguir conectado al cerrar la aplicación</span></label><div class="session-actions"><button data-action="switch-account">Cambiar de cuenta</button><button data-action="logout">Cerrar sesión</button><button data-action="forget-device">Quitar cuenta de este dispositivo</button></div><p class="fine">Cambiar de cuenta requiere la contraseña del otro usuario. Quitar cuenta borra el acceso guardado en este teléfono, pero no elimina el usuario ni sus datos en Supabase.</p><hr style="border:0;border-top:1px solid #eee;margin:20px 0"><h2>'+ (S.recovery?'Restablecer contraseña':'Crear o cambiar contraseña') +'</h2><p>Elige una contraseña exclusiva para El Corderito. Podrás volver a iniciar sesión con tu correo y esta contraseña.</p><label>Nueva contraseña</label><input id="newpass" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Mínimo 12 caracteres"><label>Confirma la nueva contraseña</label><input id="newpass2" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Repite tu contraseña"><p></p><button class="primary" data-action="save-password">Guardar contraseña</button><p class="fine">No compartas tu contraseña. También puedes seguir usando el enlace por correo.</p></div>'}
 
 
+
+
+function comboLabel(comboId){
+ return S.comboParts.filter(c=>c.combo_id===comboId).map(c=>{
+  const product=S.products.find(p=>p.id===c.product_id);
+  return Number(c.quantity)+'× '+(product?.name||'Producto');
+ }).join(' + ');
+}
+function comboView(){
+ const available=S.products.filter(p=>!S.combos.some(c=>c.product_id===p.id)&&p.active);
+ const configured=S.combos.map(c=>S.products.find(p=>p.id===c.product_id)).filter(Boolean);
+ const d=S.comboDraft;
+ const editor=!d?'':'<div class="panel"><div class="section-head"><h2>'+(d.id?'Editar combo':'Nuevo combo')+'</h2>'+
+ '<button data-action="combo-cancel">Cancelar</button></div>'+
+ '<label>Nombre del combo</label><input id="combo-name" maxlength="80" placeholder="Ejemplo: Combo Corderito" value="'+esc(d.name)+'">'+
+ '<label>Precio total del combo (MXN)</label><input type="number" id="combo-price" min="0.01" max="100000" step=".01" inputmode="decimal" value="'+esc(d.price)+'">'+
+ '<h2 style="margin-top:15px">Contenido del combo</h2><p>Indica cuántas unidades llevará de cada producto. Deja 0 para excluirlo.</p>'+
+ (available.length?available.map(p=>'<div class="row combo-component"><div><b>'+esc(p.name)+'</b><small>Precio individual '+money(p.price)+'</small></div>'+
+ '<label class="combo-quantity"><span>Cantidad</span><input data-combo-part="'+p.id+'" type="number" min="0" max="20" step="1" value="'+(Number(d.quantities[p.id])||0)+'" inputmode="numeric"></label></div>').join(''):'<p>Primero registra productos individuales en el menú.</p>')+
+ '<div class="row combo-preview"><b>Total individual de los productos</b><span>'+money(available.reduce((s,p)=>s+(Number(d.quantities[p.id])||0)*Number(p.price),0))+'</span></div>'+
+ '<label class="remember-row"><input type="checkbox" id="combo-active" '+(d.active?'checked':'')+'><span>Activar este combo para que aparezca en Ventas</span></label>'+
+ '<p class="fine">Si lo dejas desactivado, quedará guardado como borrador. Las promociones por cantidad no se aplican encima de los combos.</p>'+
+ '<button data-action="combo-save" class="primary">Guardar combo</button></div>';
+ return '<div class="panel"><div class="section-head"><div><span class="eyebrow">VENTAS · CONFIGURACIÓN</span><h1>Crear combos</h1></div>'+
+ '<span class="mini-tag">Administrador</span></div><p>Combina varios productos del menú, asigna cantidades y define el precio final que quieras.</p>'+
+ '<button class="primary" data-action="combo-new">+ Crear un combo</button>'+
+ '<p class="fine">Ejemplo: 1 torta + 1 agua + 1 puré. El inventario descontará cada ingrediente según sus recetas, no el combo como si fuera un ingrediente separado.</p></div>'+
+ editor+
+ '<div class="panel"><h2>Combos registrados</h2>'+
+ (configured.length?configured.map(c=>'<div class="item combo-existing"><div class="row"><b>'+esc(c.name)+'</b><strong>'+money(c.price)+'</strong></div>'+
+ '<small>'+esc(comboLabel(c.id)||'Sin productos')+'</small><div class="row"><span class="mini-tag '+(c.active?'good':'')+'">'+(c.active?'Activo':'Inactivo')+'</span>'+
+ '<button data-action="combo-edit" data-id="'+c.id+'">Editar</button></div></div>').join(''):
+ '<p class="empty">Todavía no hay combos registrados. Puedes crear varios y activarlos cuando decidas.</p>')+'</div>';
+}
 
 function promotionView(){
  const products=S.products.filter(p=>p.active);
@@ -779,6 +826,7 @@ function adminMore(){
  ['consumo','Consumo por venta','Cantidad descontada por cada pedido.','cart'],
  ['precios','Precios','Edición e historial de precios.','cash'],
  ['promociones','Ofertas 2× y 3×','Paquetes y descuentos automáticos.','cart'],
+ ['combos','Creador de combos','Combina productos y elige el precio final.','cart'],
  ['historial','Calendario de ventas','Historial por día, empleado y turno.','receipt'],
  ['reportes','Reportes y estadísticas','Semanal, mensual, promociones y personal.','receipt'],
  ['caja','Corte de caja','Abrir, revisar y cerrar turnos con arqueo.','cash'],
@@ -911,6 +959,11 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
  const t=e.target;
+ if(t.dataset.comboPart!==undefined && S.comboDraft){
+  const qty=Number(t.value);
+  S.comboDraft.quantities[t.dataset.comboPart]=Number.isFinite(qty)?qty:0;
+  render();return;
+ }
  if(t.id==='remember-setting'){saveRememberSetting(t.checked);S.message=t.checked?'Tu sesión quedará guardada.':'Al cerrar la aplicación deberás volver a entrar.';render();return;}
  if(t.id==='payment')S.payment=t.value;
  if(S.staff?.role!=='admin')return;
@@ -918,7 +971,7 @@ document.addEventListener('change',e=>{
  if(S.consumptionDraft!==null&&t.dataset.cLine!==undefined){const line=S.consumptionDraft[Number(t.dataset.cLine)];if(line)line[t.dataset.part]=t.value;}
 });
 
-function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}if(!S.staff.active){app.innerHTML='<div class="panel"><h1>Cuenta de empleado pendiente</h1><p>Tu correo está registrado, pero el administrador debe activar tu acceso. Mientras tanto puedes establecer tu contraseña; no tendrás acceso al inventario, ventas ni caja.</p><button data-action="check-activation">Comprobar activación</button><button data-action="logout">Salir</button></div>'+accountView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row">'+(S.navDepth>0?'<button data-action="back" title="Volver" aria-label="Regresar a la pestaña anterior">‹ Volver</button>':'')+'<button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="switch-account">Cambiar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='promociones'?promotionView():S.page==='historial'?historyView():S.page==='reportes'?reportView():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
+function render(){const app=$('app');const a=$('alerts');a.innerHTML=(S.error?'<div class="error">'+esc(S.error)+'</div>':'')+(S.message?'<div class="okmsg">'+esc(S.message)+'</div>':'');if(!S.staff){app.innerHTML=loginView();$('bottom').innerHTML='';return}if(!S.staff.active){app.innerHTML='<div class="panel"><h1>Cuenta de empleado pendiente</h1><p>Tu correo está registrado, pero el administrador debe activar tu acceso. Mientras tanto puedes establecer tu contraseña; no tendrás acceso al inventario, ventas ni caja.</p><button data-action="check-activation">Comprobar activación</button><button data-action="logout">Salir</button></div>'+accountView();$('bottom').innerHTML='';return}app.innerHTML='<div class="owner-banner"><div><b>'+esc(S.staff.display_name)+'</b><small>'+(S.staff.role==='admin'?'Administrador principal':'Empleado')+'</small></div><div class="row">'+(S.navDepth>0?'<button data-action="back" title="Volver" aria-label="Regresar a la pestaña anterior">‹ Volver</button>':'')+'<button data-action="sync" title="Actualizar datos">Actualizar</button><button data-action="switch-account">Cambiar</button><button data-action="logout">Salir</button></div></div>'+(S.page==='inicio'?summary():S.page==='ventas'?sale():S.page==='inventario'?inventory():S.page==='equipo'?teamView():S.page==='caja'?cashView():S.page==='precios'?prices():S.page==='promociones'?promotionView():S.page==='combos'?comboView():S.page==='historial'?historyView():S.page==='reportes'?reportView():S.page==='mas'?adminMore():S.page==='ingredientes'?ingredientsView():S.page==='recetas'?recipesView():S.page==='lotes'?batchesView():S.page==='consumo'?consumptionView():accountView());nav()}
 async function checkout(){let job=S.pending;if(!job){const items=Object.entries(S.cart).filter(([id,qty])=>qty>0).map(([product_id,qty])=>({product_id,qty}));if(!items.length)throw Error('Primero agrega productos');job={request:crypto.randomUUID(),items,payment:S.payment,user:S.staff.user_id};S.pending=job;sessionStorage.setItem('corderito_pending',JSON.stringify(job))}if(job.user!==S.staff.user_id)throw Error('Cobro pendiente de otra cuenta');const result=await api('/rest/v1/rpc/pos_checkout',{method:'POST',body:JSON.stringify({p_request:job.request,p_items:job.items,p_payment:job.payment})});S.pending=null;sessionStorage.removeItem('corderito_pending');S.cart={};await sync();note('Venta confirmada: '+money(result.total)+(result.duplicated?' (reintento seguro)':''));}
 async function click(e){const btn=e.target.closest('[data-action]');if(!btn)return;const action=btn.dataset.action;e.preventDefault();if(S.busy)return;S.error='';S.message='';const email=String($('email')?.value||'').trim(),password=$('password')?.value||'';try{S.busy=true;
  if(action==='login'){if(!email||!password)throw Error('Escribe correo y contraseña');saveRememberSetting($('remember-login')?.checked!==false);const auth=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});storeSession(auth);await setUser();resetTabHistory()}
@@ -939,6 +992,38 @@ else if(action==='logout'){await leaveAccount();history.replaceState({app:APP_NA
 
  else if(action==='back'){if(S.navDepth>0)history.back();return;}
  else if(action==='page'){if(S.staff.role!=='admin'&&!['ventas','inventario','caja','cuenta'].includes(btn.dataset.page))throw Error('Sin permiso para abrir esta pantalla');const destination=btn.dataset.page;if(destination==='historial'&&!S.monthStats)await loadMonth();if(destination==='reportes')await loadReport();goTab(destination);}
+
+ else if(action==='combo-new'){
+  if(S.staff?.role!=='admin')throw Error('Solo administrador');
+  S.comboDraft={id:null,name:'',price:'',active:false,quantities:{}};
+ }
+ else if(action==='combo-edit'){
+  if(S.staff?.role!=='admin')throw Error('Solo administrador');
+  const id=btn.dataset.id,product=S.products.find(p=>p.id===id);
+  if(!product||!S.combos.some(c=>c.product_id===id))throw Error('Combo no encontrado');
+  S.comboDraft={id,name:product.name,price:String(product.price),active:!!product.active,
+   quantities:Object.fromEntries(S.comboParts.filter(c=>c.combo_id===id).map(c=>[c.product_id,Number(c.quantity)]))};
+ }
+ else if(action==='combo-cancel'){S.comboDraft=null;}
+ else if(action==='combo-save'){
+  if(S.staff?.role!=='admin'||!S.comboDraft)throw Error('Solo administrador');
+  const d=S.comboDraft,name=String($('combo-name')?.value||'').trim(),
+   price=Number($('combo-price')?.value),active=!!$('combo-active')?.checked;
+  const possible=S.products.filter(p=>p.active&&!S.combos.some(c=>c.product_id===p.id));
+  const parts=possible.map(p=>({product_id:p.id,quantity:Number(d.quantities[p.id]||0)}))
+   .filter(x=>x.quantity>0);
+  if(name.length<3||name.length>80)throw Error('El nombre debe tener de 3 a 80 caracteres');
+  if(!Number.isFinite(price)||price<=0||price>100000||Math.abs(price*100-Math.round(price*100))>0.000001)
+   throw Error('El precio debe ser positivo y tener como máximo dos decimales');
+  if(parts.length<2||parts.length>12||parts.some(x=>!Number.isInteger(x.quantity)||x.quantity<1||x.quantity>20)||
+     parts.reduce((sum,x)=>sum+x.quantity,0)>99)
+   throw Error('Elige entre 2 y 12 productos diferentes, con hasta 20 unidades de cada uno');
+  if(active&&!confirm('¿Activar '+name+' por '+money(price)+'? Aparecerá en Ventas y descontará los ingredientes al cobrar.'))return;
+  await api('/rest/v1/rpc/admin_save_combo',{method:'POST',body:JSON.stringify({
+   p_combo:d.id||null,p_name:name,p_price:price,p_active:active,p_components:parts})});
+  S.comboDraft=null;await sync();
+  S.message='Combo guardado'+(active?' y activado':' como borrador');
+ }
  else if(action==='offer-save'){
   if(S.staff.role!=='admin')throw Error('Solo administrador');
   const id=btn.dataset.id,qty=Number(btn.dataset.qty),product=S.products.find(p=>p.id===id);
@@ -1185,7 +1270,7 @@ document.addEventListener('click',click);
  setInterval(async()=>{
   if(S.staff&&!S.busy){
    try{await ensureFreshSession();await sync();
-    if(!S.recipeDraft&&S.consumptionDraft===null&&S.editIngredient===null&&
+    if(!S.recipeDraft&&!S.comboDraft&&S.consumptionDraft===null&&S.editIngredient===null&&
        !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))render();
    }catch(e){if(e.authExpired)showReauthentication();else S.error='Problema de sincronización: '+e.message;render();}
   }
